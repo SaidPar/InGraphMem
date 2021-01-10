@@ -1,4 +1,4 @@
-package database;
+package database.types;
 
 public final class DBOptions {
 

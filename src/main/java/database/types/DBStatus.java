@@ -1,4 +1,4 @@
-package database;
+package database.types;
 
 public enum DBStatus {
 

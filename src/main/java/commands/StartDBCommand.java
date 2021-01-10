@@ -1,8 +1,8 @@
 package commands;
 
 import common.Logger;
-import database.DBOptions;
-import database.DBType;
+import database.types.DBOptions;
+import database.types.DBType;
 import database.Database;
 import database.Instance;
 
