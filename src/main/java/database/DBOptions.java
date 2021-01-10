@@ -3,6 +3,7 @@ package database;
 public final class DBOptions {
 
     private DBType storageType;
+    private String name;
 
     private DBOptions() {
     }
@@ -11,24 +12,37 @@ public final class DBOptions {
         return storageType;
     }
 
+    public String getName() {
+        return name;
+    }
+
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Builder
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     public static class Builder {
-        private final DBOptions INSTANCE;
+        private final DBOptions OPTIONS;
 
         public Builder() {
-            INSTANCE = new DBOptions();
+            OPTIONS = new DBOptions();
         }
 
         public Builder storageType(DBType type) {
-            this.INSTANCE.storageType = type;
+            OPTIONS.storageType = type;
+            return this;
+        }
+
+        public Builder withName(String name) {
+            OPTIONS.name = name;
             return this;
         }
 
         public DBOptions build() {
-            return this.INSTANCE;
+
+            if (null == OPTIONS.storageType)
+                OPTIONS.storageType = DBType.IN_MEMORY;
+
+            return OPTIONS;
         }
     }
 }

@@ -1,6 +1,10 @@
-import common.Constants;
+import commands.*;
 import common.Logger;
+import database.DBOptions;
+import database.Database;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 
 public class Entry {
@@ -27,16 +31,20 @@ public class Entry {
 
     private static void printIntro() {
         logger.header("InGraphMemDB");
-        logger.log("------------------------");
     }
 
     private static boolean processCommand(String input) {
 
-        if (input.equalsIgnoreCase(Constants.EXIT))
-            return true;
+        CmdArgs commandArgs = new CmdArgs(input);
+        Commandable command = commandArgs.getCommand();
+        command.parseOptions();
+        if (!command.validateOptions()) {
+            command.help();
+        } else {
+            command.execute();
 
-        if (input.startsWith(Constants.START_DATABASE)) {
-
+            if (command.getCommandType() == CmdOp.EXIT)
+                return true;
         }
 
         return false;

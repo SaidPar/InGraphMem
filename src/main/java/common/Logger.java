@@ -21,6 +21,7 @@ public final class Logger {
 
     public void header(String header) {
         System.out.println(ConsoleColors.PURPLE + header);
+        System.out.println(ConsoleColors.PURPLE + "--------------------");
     }
 
     public void inputCarrot() {
