@@ -1,6 +1,6 @@
 package database.types;
 
 public enum DBType {
-    IN_MEMORY,
-    PORTABLE
+  IN_MEMORY,
+  PORTABLE
 }

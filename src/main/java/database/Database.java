@@ -15,53 +15,72 @@ import java.util.Map;
 
 public class Database implements AutoCloseable {
 
-    private static final Logger logger = Logger.getLogger();
+  private static final Logger logger = Logger.getLogger();
 
-    private final String name;
-    private final DBType storageType;
-    private final Map<String, Node> nodes;
-    private final Map<String, Relationship> rels;
-    private DBStatus status;
-    private final DBEngine engine;
+  private final String name;
+  private final DBType storageType;
+  private final Map<String, Node> nodes;
+  private final Map<String, Relationship> rels;
+  private DBStatus status;
+  private final DBEngine engine;
 
-    public Database(DBOptions options) {
-        storageType = options.getStorageType();
-        name = options.getName();
-        status = DBStatus.OFFLINE;
+  public Database(DBOptions options) {
+    storageType = options.getStorageType();
+    name = options.getName();
+    status = DBStatus.OFFLINE;
 
-        switch (storageType) {
-            case PORTABLE:
-                engine = new PortableDatabase();
-                break;
+    switch (storageType) {
+      case PORTABLE:
+        engine = new PortableDatabase();
+        break;
 
-            case IN_MEMORY:
-            default:
-                engine = new InMemoryDatabase();
-                break;
-        }
-
-        nodes = new HashMap<String, Node>();
-        rels = new HashMap<String, Relationship>();
+      case IN_MEMORY:
+      default:
+        engine = new InMemoryDatabase();
+        break;
     }
 
-    public String getName() {
-        return this.name;
-    }
+    nodes = new HashMap<String, Node>();
+    rels = new HashMap<String, Relationship>();
+  }
 
-    public void start() {
-        engine.start();
+  public String getName() {
+    return this.name;
+  }
 
-        if (status == DBStatus.OFFLINE) {
-            status = DBStatus.RUNNING;
-            logger.log("Database: '" + name + "' started.");
-            logger.log("\tStorage Type: " + storageType);
-        } else {
-            logger.log("Database: '" + name + "' already running.");
-        }
-    }
+  public void start() {
+    engine.start();
 
-    @Override
-    public void close() throws Exception {
-        engine.stop();
+    if (status == DBStatus.OFFLINE) {
+      status = DBStatus.RUNNING;
+      logger.log("Database: '" + name + "' started.");
+      logger.log("\tStorage Type: " + storageType);
+    } else {
+      logger.log("Database: '" + name + "' already running.");
     }
+  }
+
+  public Node node(String name) throws Exception {
+    Node node = nodes.get(name);
+    if (null == node)
+      throw new Exception("node does not exist."); //ToDo: InGraphException
+
+    return node;
+  }
+
+  public Relationship relationship(String name) throws Exception {
+    Relationship rel = rels.get(name);
+    if (null == rel)
+      throw new Exception("relationship does not exist."); //ToDo: InGraphException
+
+    return rel;
+  }
+
+//    public ResultSet query(String cypher) {
+//    }
+
+  @Override
+  public void close() throws Exception {
+    engine.stop();
+  }
 }

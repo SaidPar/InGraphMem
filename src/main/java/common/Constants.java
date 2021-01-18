@@ -1,8 +1,8 @@
 package common;
 
 public final class Constants {
-    private Constants() {
-    }
+  private Constants() {
+  }
 
-    public static String _UUID = "_uuid";
+  public static String _UUID = "_uuid";
 }

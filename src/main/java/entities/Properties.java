@@ -6,12 +6,20 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Package private
+ */
 public final class Properties {
 
-    private final Map<String, Object> properties;
+  private final Map<String, Object> properties;
 
-    public Properties(UUID uuid) {
-        properties = new HashMap<>();
-        properties.put(Constants._UUID, uuid);
-    }
+  public Properties() {
+    properties = new HashMap<>();
+    //properties.put(Constants._UUID, uuid); // ToDo: evaluate if we need to store uuid in both properties and nodes / rels
+  }
+
+  public Properties addAttribute(String attributeName, Object value) {
+    properties.put(attributeName, value);
+    return this;
+  }
 }
