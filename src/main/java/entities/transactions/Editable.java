@@ -1,6 +1,6 @@
 package entities.transactions;
 
-import entities.Properties;
+import entities.Document;
 
 import java.util.List;
 import java.util.Map;
@@ -11,9 +11,9 @@ import java.util.UUID;
  * Interface to manage CUD operations
  */
 public interface Editable {
-  void insert(List<Properties> documents);
+  List<UUID> insert(List<Document> documents);
 
-  void update(Map<UUID, Properties> updateDocuments);
+  void update(Map<UUID, Document> updateDocuments);
 
   void delete(Set<UUID> deleteKeys);
 }

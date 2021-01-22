@@ -22,12 +22,13 @@ public final class TransactionManager {
   }
 
   public Transaction createTransaction() {
-    Transaction trans = new Transaction();
+    Transaction trans;
     synchronized (transactions) {
       Long newTranID = tranID.incrementAndGet();
       while (transactions.containsKey(newTranID)) {
         newTranID = tranID.incrementAndGet();
       }
+      trans = new Transaction(newTranID);
       transactions.put(newTranID, trans);
     }
 

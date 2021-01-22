@@ -10,35 +10,37 @@ public final class NodeInternal {
 
   // <Unique Identifier, Properties>
   // ToDo: make thread safe resource
-  private final Map<UUID, Properties> documents;
+  private final Map<UUID, Document> documents;
 
   public NodeInternal() {
     documents = new ConcurrentHashMap<>();
   }
 
-  public UUID insert(Properties insertDoc) throws NodeException {
-    // create unique identifier
-    UUID newUUID = UUID.randomUUID();
-    synchronized (documents) {
-      if (!documents.containsKey(newUUID)) {
-        documents.put(UUID.randomUUID(), insertDoc);
+  public void insert(UUID uuid, Document insertDoc) throws NodeException {
+    synchronized(documents) {
+      if (!documents.containsKey(uuid)) {
+        documents.put(uuid, insertDoc);
       } else {
-        throw new NodeException("Document with key, " + newUUID + ", already exists.");
+        throw new NodeException("Document with key, " + uuid + ", already exists.");
       }
     }
-
-    return newUUID;
   }
 
-  public void update(UUID updateUUID, Properties updateProps) {
+  public void update(UUID updateUUID, Document updateProps) {
     documents.replace(updateUUID, updateProps);
   }
 
-  public void delete(UUID deleteUUID) {
-    documents.remove(deleteUUID);
+  public Document delete(UUID deleteUUID) {
+    Document deleteDoc;
+    synchronized(documents) {
+      deleteDoc = documents.get(deleteUUID);
+      documents.remove(deleteUUID);
+    }
+
+    return deleteDoc;
   }
 
-  public Properties getDocument(UUID uuid) {
+  public Document getDocument(UUID uuid) {
     return documents.get(uuid);
   }
 }

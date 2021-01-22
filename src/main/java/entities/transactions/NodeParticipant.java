@@ -2,7 +2,7 @@ package entities.transactions;
 
 import database.Instance;
 import entities.NodeInternal;
-import entities.Properties;
+import entities.Document;
 
 import java.util.*;
 
@@ -16,14 +16,14 @@ public final class NodeParticipant implements Transactionable, Editable {
   private final NodeInternal internalNode;
 
   // Member variables holding interim tx changeset.
-  private final List<Properties> insertDocs;
-  private final Map<UUID, Properties> updateDocuments;
+  private final Map<UUID, Document> insertDocs;
+  private final Map<UUID, Document> updateDocuments;
   private final Set<UUID> deleteDocuments;
 
   // Member variables  holding original state for rollback.
   private final List<UUID> insertedKeys;
-  private final Map<UUID, Properties> originalUpdateDocs;
-  private final Map<UUID, Properties> originalDeleteDocs;
+  private final Map<UUID, Document> originalUpdateDocs;
+  private final Map<UUID, Document> originalDeleteDocs;
 
   private final Instance graphInstance;
 
@@ -31,7 +31,7 @@ public final class NodeParticipant implements Transactionable, Editable {
     this.name = name;
     this.internalNode = internalNode;
 
-    insertDocs = new ArrayList<>();
+    insertDocs = new HashMap<>();
     updateDocuments = new HashMap<>();
     deleteDocuments = new HashSet<>();
 
@@ -50,20 +50,31 @@ public final class NodeParticipant implements Transactionable, Editable {
   @Override
   public void commitTransaction() {
     // commit changes to internal Node class
-    List<UUID> insertedKeys = new ArrayList<>();
     try {
-      for (Properties doc : insertDocs) {
-        insertedKeys.add(
-          internalNode.insert(doc));
+      // ToDo: Take Lock
+
+      // insert commits
+      for (var doc : insertDocs.entrySet()) {
+        internalNode.insert(doc.getKey(), doc.getValue());
+        insertedKeys.add(doc.getKey());
       }
+
+      // update commits
+      for (var doc : updateDocuments.entrySet()) {
+        UUID uuid = doc.getKey();
+        Document updateDoc = doc.getValue();
+        internalNode.update(uuid, updateDoc);
+      }
+
+      // delete commits
+      for (UUID key : deleteDocuments) {
+        originalDeleteDocs.put(key, internalNode.delete(key));
+      }
+
+      // ToDo: Release Lock
     } catch (Exception e) {
         // ToDo: Hold these operations in member variable, and have level above call abort in case another participant
         //  fails.
-        // delete keys, throw exception
-        for (UUID uuid : insertedKeys) {
-            internalNode.delete(uuid);
-        }
-
         // ToDo: Throw?
     }
 
@@ -87,17 +98,41 @@ public final class NodeParticipant implements Transactionable, Editable {
       // ToDo: What to do if we fail here? Catastrophic --> strategy for recovery
     }
 
-    // ToDo: Updates & Deletes
+    try {
+      for (var origUpdate : originalUpdateDocs.entrySet()) {
+        internalNode.update(origUpdate.getKey(), origUpdate.getValue());
+      }
+    } catch (Exception e) {
+      // ToDo: What to do if we fail here? Catastrophic --> strategy for recovery
+    }
+
+    try {
+      for (var origDelete : originalDeleteDocs.entrySet()) {
+        internalNode.insert(origDelete.getKey(), origDelete.getValue());
+      }
+    } catch (Exception e) {
+      // ToDo: What to do if we fail here? Catastrophic --> strategy for recovery
+    }
   }
 
   @Override
-  public void insert(List<Properties> documents) {
-    insertDocs.addAll(documents);
+  public List<UUID> insert(List<Document> documents) {
+    List<UUID> insertKeys = new ArrayList<>();
+    for (Document doc : documents) {
+      UUID newUUID = UUID.randomUUID();
+      synchronized(insertDocs) {
+        if (!insertDocs.containsKey(newUUID))
+          insertDocs.put(newUUID, doc);
+          insertKeys.add(newUUID);
+      }
+    }
+
+    return insertKeys;
   }
 
   @Override
-  public void update(Map<UUID, Properties> updateDocuments) {
-    // for each one, does it exist, if so, merge
+  public void update(Map<UUID, Document> updateDocuments) {
+    // ToDo: for each one, does it exist, if so, merge, preserve original
   }
 
   @Override

@@ -10,6 +10,7 @@ import entities.transactions.TxStatus;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -25,7 +26,9 @@ public class Node {
     internalNode = new NodeInternal();
   }
 
-  public void insert(List<Properties> documents, InsertOptions opts) throws Exception {
+  public List<UUID> insert(List<Document> documents, InsertOptions opts) throws Exception {
+    // ToDo: Insert needs to return List of UUIDs
+
     TransactionManager txManager = TransactionManager.getInstance();
     Transaction tx;
 
@@ -42,18 +45,62 @@ public class Node {
       throw new Exception("Transaction not running."); // ToDo: InGraphDBException
 
     NodeParticipant participant = getParticipant(tx);
-    participant.insert(documents);
+    List<UUID> insertKeys = participant.insert(documents);
+
+    if (null == opts.getTransactionID())
+      tx.commit();
+
+    return insertKeys;
+  }
+
+  public void update(Map<UUID, Document> updateDocuments, UpdateOptions opts) throws Exception {
+    TransactionManager txManager = TransactionManager.getInstance();
+    Transaction tx;
+
+    if (null == opts.getTransactionID()) {
+      // implicit transaction
+      tx = txManager.createTransaction();
+      tx.start();
+    } else {
+      // explicit transaction
+      tx = txManager.getTransaction(opts.getTransactionID());
+    }
+
+    if (tx.getStatus() != TxStatus.RUNNING)
+      throw new Exception("Transaction not running."); // ToDo: InGraphDBException
+
+    NodeParticipant participant = getParticipant(tx);
+    participant.update(updateDocuments);
 
     if (null == opts.getTransactionID())
       tx.commit();
   }
 
-  public void update(Map<UUID, Properties> updateDocuments, UpdateOptions opts) {
+  public void delete(Set<UUID> deleteKeys, DeleteOptions opts) throws Exception {
+    TransactionManager txManager = TransactionManager.getInstance();
+    Transaction tx;
 
+    if (null == opts.getTransactionID()) {
+      // implicit transaction
+      tx = txManager.createTransaction();
+      tx.start();
+    } else {
+      // explicit transaction
+      tx = txManager.getTransaction(opts.getTransactionID());
+    }
+
+    if (tx.getStatus() != TxStatus.RUNNING)
+      throw new Exception("Transaction not running."); // ToDo: InGraphDBException
+
+    NodeParticipant participant = getParticipant(tx);
+    participant.delete(deleteKeys);
+
+    if (null == opts.getTransactionID())
+      tx.commit();
   }
 
-  public void delete(List<UUID> deleteKeys, DeleteOptions opts) {
-
+  public Document getDocument(UUID key) {
+    return internalNode.getDocument(key);
   }
 
   private NodeParticipant getParticipant(Transaction tx) throws Exception {

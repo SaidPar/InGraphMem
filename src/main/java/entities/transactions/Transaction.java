@@ -5,11 +5,17 @@ import java.util.Map;
 
 public class Transaction implements AutoCloseable {
 
+  private final Long txID;
   private TxStatus status = TxStatus.NOT_STARTED;
   private Map<String, Transactionable> participants;
 
-  Transaction() {
+  Transaction(Long txID) {
+    this.txID = txID;
     participants = new HashMap<>();
+  }
+
+  public Long getID() {
+    return txID;
   }
 
   public void start() {
