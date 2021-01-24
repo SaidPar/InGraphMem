@@ -1,9 +1,11 @@
 package entities.transactions;
 
+import exceptions.NodeException;
+
 public interface Transactionable {
   void startTransaction();
 
-  void commitTransaction();
+  void commitTransaction() throws NodeException;
 
   void abortTransaction();
 

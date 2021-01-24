@@ -7,6 +7,7 @@ import entities.transactions.NodeParticipant;
 import entities.transactions.Transaction;
 import entities.transactions.TransactionManager;
 import entities.transactions.TxStatus;
+import exceptions.NodeException;
 
 import java.util.List;
 import java.util.Map;
@@ -69,8 +70,16 @@ public class Node {
     if (tx.getStatus() != TxStatus.RUNNING)
       throw new Exception("Transaction not running."); // ToDo: InGraphDBException
 
-    NodeParticipant participant = getParticipant(tx);
-    Map<UUID, Document> doc = participant.update(updateDocuments, opts);
+    Map<UUID, Document> doc;
+    try {
+      NodeParticipant participant = getParticipant(tx);
+      doc = participant.update(updateDocuments, opts);
+    } catch (NodeException e) {
+      if (null == opts.getTransactionID())
+        tx.abort();
+
+      throw e;
+    }
 
     if (null == opts.getTransactionID())
       tx.commit();
@@ -94,8 +103,13 @@ public class Node {
     if (tx.getStatus() != TxStatus.RUNNING)
       throw new Exception("Transaction not running."); // ToDo: InGraphDBException
 
-    NodeParticipant participant = getParticipant(tx);
-    participant.delete(deleteKeys);
+    try {
+      NodeParticipant participant = getParticipant(tx);
+      participant.delete(deleteKeys);
+    } catch (NodeException e) {
+      if (null == opts.getTransactionID())
+        tx.abort();
+    }
 
     if (null == opts.getTransactionID())
       tx.commit();

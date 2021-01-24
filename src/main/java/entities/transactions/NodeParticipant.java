@@ -50,11 +50,9 @@ public final class NodeParticipant implements Transactionable, Editable {
   }
 
   @Override
-  public void commitTransaction() {
+  public void commitTransaction() throws NodeException {
     // commit changes to internal Node class
     try {
-      // ToDo: Take Lock
-
       // insert commits
       for (var doc : insertDocs.entrySet()) {
         internalNode.insert(doc.getKey(), doc.getValue());
@@ -72,21 +70,22 @@ public final class NodeParticipant implements Transactionable, Editable {
       for (UUID key : deleteDocuments) {
         originalDeleteDocs.put(key, internalNode.delete(key));
       }
-
-      // ToDo: Release Lock
     } catch (Exception e) {
-        // ToDo: Hold these operations in member variable, and have level above call abort in case another participant
-        //  fails.
-        // ToDo: Throw?
+        throw new NodeException("Failed to commit transaction.");
+    } finally {
+      releaseLocks();
     }
-
-    // ToDo: Update & Delete Commit actions
-    //  think about undo operation
   }
 
   @Override
   public void abortTransaction() {
     // throw away change set
+    // Post commit, should we roll back?
+    insertedKeys.clear();
+    updateDocuments.clear();
+    deleteDocuments.clear();
+
+    releaseLocks();
   }
 
   @Override
@@ -114,6 +113,8 @@ public final class NodeParticipant implements Transactionable, Editable {
       }
     } catch (Exception e) {
       // ToDo: What to do if we fail here? Catastrophic --> strategy for recovery
+    } finally {
+      releaseLocks();
     }
   }
 
@@ -145,6 +146,7 @@ public final class NodeParticipant implements Transactionable, Editable {
         throw new NodeException("Document with key, " + key + ", does not exist.");
       }
 
+      internalNode.takeLock(key, 5L);
       Document updateDoc = new Document(original);
 
       // Merge Operation - overwrites any property which exists
@@ -168,7 +170,26 @@ public final class NodeParticipant implements Transactionable, Editable {
   }
 
   @Override
-  public void delete(Set<UUID> deleteKeys) {
-    deleteDocuments.addAll(deleteKeys);
+  public void delete(Set<UUID> deleteKeys) throws NodeException {
+    for (UUID key : deleteKeys) {
+      try {
+        internalNode.takeLock(key, 5L);
+        deleteDocuments.add(key);
+      } catch (Exception e) {
+        throw new NodeException("Failed to acquire Lock on " + key);
+      }
+    }
+  }
+
+  private void releaseLocks() {
+    // release update locks
+    for (var doc : updateDocuments.entrySet()) {
+      internalNode.releaseLock(doc.getKey());
+    }
+
+    // release delete locks
+    for (UUID key : deleteDocuments) {
+      internalNode.releaseLock(key);
+    }
   }
 }

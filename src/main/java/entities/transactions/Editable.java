@@ -17,5 +17,5 @@ public interface Editable {
 
   Map<UUID, Document> update(Map<UUID, Document> updateDocuments, UpdateOptions options) throws NodeException;
 
-  void delete(Set<UUID> deleteKeys);
+  void delete(Set<UUID> deleteKeys) throws NodeException;
 }

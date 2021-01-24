@@ -5,9 +5,11 @@ import entities.edit_options.InsertOptions;
 import entities.edit_options.UpdateOptions;
 import entities.transactions.Transaction;
 import entities.transactions.TransactionManager;
+import exceptions.NodeException;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -145,4 +147,65 @@ class NodeTest {
   }
 
   // ToDo: abort test case
+
+  @Test
+  void multipleUpdates() throws Exception {
+    Node testNode = new Node("test");
+
+    List<Document> documents = new ArrayList<>();
+    documents.add(
+      new Document()
+        .addAttribute("test1", "test1")
+        .addAttribute("test2" ,2)
+    );
+
+    List<UUID> insertKeys = testNode.insert(documents, new InsertOptions());
+    assertNotNull(insertKeys);
+    assertEquals(1, insertKeys.size());
+
+    UUID key = insertKeys.get(0);
+
+    CompletableFuture f1 =
+      CompletableFuture.runAsync(() -> {
+        Map<UUID, Document> updateDocs = new HashMap<>();
+        updateDocs.put(insertKeys.get(0),
+          new Document()
+            .addAttribute("test1", 1));
+        try {
+          Transaction tx = TransactionManager.getInstance()
+            .createTransaction();
+
+          tx.start();
+
+          testNode.update(updateDocs, new UpdateOptions().withTransactionID(tx.getID()));
+          Thread.sleep(6000);
+
+          tx.commit();
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+      });
+    CompletableFuture f2 =
+      CompletableFuture.runAsync(() -> {
+        Map<UUID, Document> updateDocs = new HashMap<>();
+        updateDocs.put(insertKeys.get(0),
+          new Document()
+            .addAttribute("test1", 2));
+        try {
+          testNode.update(updateDocs, new UpdateOptions());
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+      }).exceptionally(ex -> {
+        assertSame(ex.getClass(), NodeException.class);
+        ex.printStackTrace();
+        return null;
+      });
+
+    CompletableFuture<Void> all = CompletableFuture.allOf(f1, f2);
+    all.get();
+
+    Document doc = testNode.getDocument(key);
+    assertEquals(1, doc.getAttribute("test1"));
+  }
 }

@@ -9,7 +9,7 @@ public class Transaction implements AutoCloseable {
 
   private final Long txID;
   private TxStatus status = TxStatus.NOT_STARTED;
-  private Map<String, Transactionable> participants;
+  private Map<String, Transactionable> participants; // ToDo: evaluate if participants need to be a thread safe resource
 
   Transaction(Long txID) {
     this.txID = txID;
@@ -36,9 +36,14 @@ public class Transaction implements AutoCloseable {
       }
     } catch (Exception e) {
       // Rollback transaction across all committed participants
-      // ToDo: Do I need a locking mechanism for inserts / updates / deletes
       for (Transactionable txWorker : committed) {
         txWorker.rollBack();
+      }
+
+      // abort all transactions
+      for (var participant : participants.entrySet()) {
+        Transactionable txWorker = participant.getValue();
+        txWorker.abortTransaction();
       }
 
       status = TxStatus.ABORTED;
