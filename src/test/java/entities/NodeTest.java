@@ -2,14 +2,12 @@ package entities;
 
 import entities.edit_options.DeleteOptions;
 import entities.edit_options.InsertOptions;
+import entities.edit_options.UpdateOptions;
 import entities.transactions.Transaction;
 import entities.transactions.TransactionManager;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -117,4 +115,34 @@ class NodeTest {
       assertNull(testNode.getDocument(key));
     }
   }
+
+  @Test
+  void update() throws Exception {
+    Node testNode = new Node("test");
+
+    List<Document> documents = new ArrayList<>();
+    documents.add(
+      new Document()
+        .addAttribute("test1", "test1")
+        .addAttribute("test2" ,2)
+    );
+
+    List<UUID> insertKeys = testNode.insert(documents, new InsertOptions());
+    assertNotNull(insertKeys);
+    assertEquals(1, insertKeys.size());
+
+    Map<UUID, Document> updateDocs = new HashMap<>();
+    updateDocs.put(insertKeys.get(0),
+      new Document()
+        .addAttribute("test1", 3));
+
+    Map<UUID, Document> originals = testNode.update(updateDocs, new UpdateOptions().returnOld());
+    Document originalDoc = originals.get(insertKeys.get(0));
+    assertEquals("test1", originalDoc.getAttribute("test1"));
+
+    Document newDoc = testNode.getDocument(insertKeys.get(0));
+    assertEquals(3, newDoc.getAttribute("test1"));
+  }
+
+  // ToDo: abort test case
 }

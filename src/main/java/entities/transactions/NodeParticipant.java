@@ -3,6 +3,8 @@ package entities.transactions;
 import database.Instance;
 import entities.NodeInternal;
 import entities.Document;
+import entities.edit_options.UpdateOptions;
+import exceptions.NodeException;
 
 import java.util.*;
 
@@ -131,8 +133,38 @@ public final class NodeParticipant implements Transactionable, Editable {
   }
 
   @Override
-  public void update(Map<UUID, Document> updateDocuments) {
-    // ToDo: for each one, does it exist, if so, merge, preserve original
+  public Map<UUID, Document> update(Map<UUID, Document> updatePartialDocuments, UpdateOptions opts)
+    throws NodeException {
+
+    for (var updateMap : updatePartialDocuments.entrySet()) {
+      UUID key = updateMap.getKey();
+      Document updatePartial = updateMap.getValue();
+
+      Document original = internalNode.getDocument(key);
+      if (null == original) {
+        throw new NodeException("Document with key, " + key + ", does not exist.");
+      }
+
+      Document updateDoc = new Document(original);
+
+      // Merge Operation - overwrites any property which exists
+      for (var prop : updatePartial.getProperties().entrySet()) {
+        String propName = prop.getKey();
+        Object propVal = prop.getValue();
+
+        updateDoc.addAttribute(propName, propVal);
+      }
+
+      originalUpdateDocs.put(key, original);
+      updateDocuments.put(key, updateDoc);
+    }
+
+    if (opts.canReturnNew())
+      return updateDocuments;
+    else if (opts.canReturnOld())
+      return originalUpdateDocs;
+    else
+      return null;
   }
 
   @Override

@@ -1,6 +1,8 @@
 package entities.transactions;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class Transaction implements AutoCloseable {
@@ -25,14 +27,22 @@ public class Transaction implements AutoCloseable {
 
   public void commit() {
     // push work off to participant classes
+    List<Transactionable> committed = new ArrayList<>();
     try {
       for (var participant : participants.entrySet()) {
         Transactionable txWorker = participant.getValue();
         txWorker.commitTransaction();
+        committed.add(txWorker);
       }
     } catch (Exception e) {
-      // ToDo: Rollback transaction across all participants
+      // Rollback transaction across all committed participants
       // ToDo: Do I need a locking mechanism for inserts / updates / deletes
+      for (Transactionable txWorker : committed) {
+        txWorker.rollBack();
+      }
+
+      status = TxStatus.ABORTED;
+      return;
     }
 
     status = TxStatus.COMMITTED;

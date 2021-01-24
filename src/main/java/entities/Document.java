@@ -15,6 +15,11 @@ public final class Document {
     //properties.put(Constants._UUID, uuid); // ToDo: evaluate if we need to store uuid in both properties and nodes / rels
   }
 
+  public Document(Document doc) {
+    // Deep copy
+    properties = new HashMap<>(doc.properties);
+  }
+
   public Document addAttribute(String attributeName, Object value) {
     properties.put(attributeName, value);
     return this;
@@ -22,5 +27,9 @@ public final class Document {
 
   public Object getAttribute(String attributeName) {
     return properties.get(attributeName);
+  }
+
+  public Map<String, Object> getProperties() {
+    return properties;
   }
 }

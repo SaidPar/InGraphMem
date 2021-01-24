@@ -53,7 +53,7 @@ public class Node {
     return insertKeys;
   }
 
-  public void update(Map<UUID, Document> updateDocuments, UpdateOptions opts) throws Exception {
+  public Map<UUID, Document> update(Map<UUID, Document> updateDocuments, UpdateOptions opts) throws Exception {
     TransactionManager txManager = TransactionManager.getInstance();
     Transaction tx;
 
@@ -70,10 +70,12 @@ public class Node {
       throw new Exception("Transaction not running."); // ToDo: InGraphDBException
 
     NodeParticipant participant = getParticipant(tx);
-    participant.update(updateDocuments);
+    Map<UUID, Document> doc = participant.update(updateDocuments, opts);
 
     if (null == opts.getTransactionID())
       tx.commit();
+
+    return doc;
   }
 
   public void delete(Set<UUID> deleteKeys, DeleteOptions opts) throws Exception {

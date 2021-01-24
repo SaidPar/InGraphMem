@@ -1,6 +1,8 @@
 package entities.transactions;
 
 import entities.Document;
+import entities.edit_options.UpdateOptions;
+import exceptions.NodeException;
 
 import java.util.List;
 import java.util.Map;
@@ -13,7 +15,7 @@ import java.util.UUID;
 public interface Editable {
   List<UUID> insert(List<Document> documents);
 
-  void update(Map<UUID, Document> updateDocuments);
+  Map<UUID, Document> update(Map<UUID, Document> updateDocuments, UpdateOptions options) throws NodeException;
 
   void delete(Set<UUID> deleteKeys);
 }
