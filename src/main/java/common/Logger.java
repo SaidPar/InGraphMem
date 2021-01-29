@@ -27,4 +27,8 @@ public final class Logger {
   public void inputCarrot() {
     System.out.print(ConsoleColors.BLUE_BOLD + "> ");
   }
+
+  public void fine(String message) {
+    System.out.println(ConsoleColors.GREEN_BRIGHT + Thread.currentThread().getName() + " : " + message);
+  }
 }

@@ -7,7 +7,9 @@ import entities.transactions.NodeParticipant;
 import entities.transactions.Transaction;
 import entities.transactions.TransactionManager;
 import entities.transactions.TxStatus;
+import exceptions.InGraphDBException;
 import exceptions.NodeException;
+import exceptions.TransactionException;
 
 import java.util.List;
 import java.util.Map;
@@ -27,99 +29,113 @@ public class Node {
     internalNode = new NodeInternal();
   }
 
-  public List<UUID> insert(List<Document> documents, InsertOptions opts) throws Exception {
-    // ToDo: Insert needs to return List of UUIDs
-
-    TransactionManager txManager = TransactionManager.getInstance();
-    Transaction tx;
-
-    if (null == opts.getTransactionID()) {
-      // implicit transaction
-      tx = txManager.createTransaction();
-      tx.start();
-    } else {
-      // explicit transaction
-      tx = txManager.getTransaction(opts.getTransactionID());
-    }
-
-    if (tx.getStatus() != TxStatus.RUNNING)
-      throw new Exception("Transaction not running."); // ToDo: InGraphDBException
-
-    NodeParticipant participant = getParticipant(tx);
-    List<UUID> insertKeys = participant.insert(documents);
-
-    if (null == opts.getTransactionID())
-      tx.commit();
-
-    return insertKeys;
-  }
-
-  public Map<UUID, Document> update(Map<UUID, Document> updateDocuments, UpdateOptions opts) throws Exception {
-    TransactionManager txManager = TransactionManager.getInstance();
-    Transaction tx;
-
-    if (null == opts.getTransactionID()) {
-      // implicit transaction
-      tx = txManager.createTransaction();
-      tx.start();
-    } else {
-      // explicit transaction
-      tx = txManager.getTransaction(opts.getTransactionID());
-    }
-
-    if (tx.getStatus() != TxStatus.RUNNING)
-      throw new Exception("Transaction not running."); // ToDo: InGraphDBException
-
-    Map<UUID, Document> doc;
-    try {
-      NodeParticipant participant = getParticipant(tx);
-      doc = participant.update(updateDocuments, opts);
-    } catch (NodeException e) {
-      if (null == opts.getTransactionID())
-        tx.abort();
-
-      throw e;
-    }
-
-    if (null == opts.getTransactionID())
-      tx.commit();
-
-    return doc;
-  }
-
-  public void delete(Set<UUID> deleteKeys, DeleteOptions opts) throws Exception {
-    TransactionManager txManager = TransactionManager.getInstance();
-    Transaction tx;
-
-    if (null == opts.getTransactionID()) {
-      // implicit transaction
-      tx = txManager.createTransaction();
-      tx.start();
-    } else {
-      // explicit transaction
-      tx = txManager.getTransaction(opts.getTransactionID());
-    }
-
-    if (tx.getStatus() != TxStatus.RUNNING)
-      throw new Exception("Transaction not running."); // ToDo: InGraphDBException
+  public List<UUID> insert(List<Document> documents, InsertOptions opts) throws InGraphDBException {
 
     try {
+      TransactionManager txManager = TransactionManager.getInstance();
+      Transaction tx;
+
+      if (null == opts.getTransactionID()) {
+        // implicit transaction
+        tx = txManager.createTransaction();
+        tx.start();
+      } else {
+        // explicit transaction
+        tx = txManager.getTransaction(opts.getTransactionID());
+      }
+
+      if (tx.getStatus() != TxStatus.RUNNING)
+        throw new InGraphDBException("Transaction not running.");
+
       NodeParticipant participant = getParticipant(tx);
-      participant.delete(deleteKeys);
-    } catch (NodeException e) {
+      List<UUID> insertKeys = participant.insert(documents);
+
       if (null == opts.getTransactionID())
-        tx.abort();
+        tx.commit();
+
+      return insertKeys;
+    } catch (TransactionException e) {
+      throw new InGraphDBException(e);
+    }
+  }
+
+  public Map<UUID, Document> update(Map<UUID, Document> updateDocuments, UpdateOptions opts)
+    throws InGraphDBException {
+
+    try {
+      TransactionManager txManager = TransactionManager.getInstance();
+      Transaction tx;
+
+      if (null == opts.getTransactionID()) {
+        // implicit transaction
+        tx = txManager.createTransaction();
+        tx.start();
+      } else {
+        // explicit transaction
+        tx = txManager.getTransaction(opts.getTransactionID());
+      }
+
+      if (tx.getStatus() != TxStatus.RUNNING)
+        throw new InGraphDBException("Transaction not running.");
+
+      Map<UUID, Document> doc;
+      try {
+        NodeParticipant participant = getParticipant(tx);
+        doc = participant.update(updateDocuments, opts);
+      } catch (NodeException e) {
+        if (null == opts.getTransactionID())
+          tx.abort();
+
+        throw e;
+      }
+
+      if (null == opts.getTransactionID())
+        tx.commit();
+
+      return doc;
+    } catch (NodeException | TransactionException e) {
+      throw new InGraphDBException(e);
     }
 
-    if (null == opts.getTransactionID())
-      tx.commit();
+  }
+
+  public void delete(Set<UUID> deleteKeys, DeleteOptions opts) throws InGraphDBException {
+    try {
+      TransactionManager txManager = TransactionManager.getInstance();
+      Transaction tx;
+
+      if (null == opts.getTransactionID()) {
+        // implicit transaction
+        tx = txManager.createTransaction();
+        tx.start();
+      } else {
+        // explicit transaction
+        tx = txManager.getTransaction(opts.getTransactionID());
+      }
+
+      if (tx.getStatus() != TxStatus.RUNNING)
+        throw new InGraphDBException("Transaction not running.");
+
+      try {
+        NodeParticipant participant = getParticipant(tx);
+        participant.delete(deleteKeys);
+      } catch (NodeException e) {
+        if (null == opts.getTransactionID())
+          tx.abort();
+      }
+
+      if (null == opts.getTransactionID())
+        tx.commit();
+    } catch (TransactionException e) {
+      throw new InGraphDBException(e);
+    }
   }
 
   public Document getDocument(UUID key) {
     return internalNode.getDocument(key);
   }
 
-  private NodeParticipant getParticipant(Transaction tx) throws Exception {
+  private NodeParticipant getParticipant(Transaction tx) {
     NodeParticipant participant = (NodeParticipant) tx.getParticipant(name);
     if (null == participant) {
       participant = new NodeParticipant(name, this.internalNode);

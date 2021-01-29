@@ -64,7 +64,7 @@ public class Transaction implements AutoCloseable {
     return this.status;
   }
 
-  public Transactionable getParticipant(String name) throws Exception {
+  public Transactionable getParticipant(String name) {
     Transactionable participant = participants.get(name);
     return participant;
   }

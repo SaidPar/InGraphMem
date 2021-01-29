@@ -9,6 +9,7 @@ import database.types.DBStatus;
 import database.types.DBType;
 import entities.Node;
 import entities.Relationship;
+import exceptions.InGraphDBException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -60,18 +61,18 @@ public class Database implements AutoCloseable {
     }
   }
 
-  public Node node(String name) throws Exception {
+  public Node node(String name) throws InGraphDBException {
     Node node = nodes.get(name);
     if (null == node)
-      throw new Exception("node does not exist."); //ToDo: InGraphException
+      throw new InGraphDBException("node does not exist.");
 
     return node;
   }
 
-  public Relationship relationship(String name) throws Exception {
+  public Relationship relationship(String name) throws InGraphDBException {
     Relationship rel = rels.get(name);
     if (null == rel)
-      throw new Exception("relationship does not exist."); //ToDo: InGraphException
+      throw new InGraphDBException("relationship does not exist.");
 
     return rel;
   }

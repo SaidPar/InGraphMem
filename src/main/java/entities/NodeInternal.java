@@ -1,5 +1,6 @@
 package entities;
 
+import common.Logger;
 import exceptions.NodeException;
 
 import java.util.HashMap;
@@ -11,6 +12,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public final class NodeInternal {
 
+  private static final Logger logger = Logger.getLogger();
   private final Map<UUID, Document> documents;
   private final Map<UUID, ReentrantLock> locks;
 
@@ -50,8 +52,7 @@ public final class NodeInternal {
   public void releaseLock(UUID uuid) {
     if (locks.get(uuid) != null) {
       locks.get(uuid).unlock();
-      // ToDo: Logger fine level
-      System.out.println(Thread.currentThread().getName() + ": released lock on " + uuid);
+      logger.fine("Released lock on " + uuid);
     }
 
   }
@@ -69,8 +70,7 @@ public final class NodeInternal {
 
     try {
       if (lock.tryLock() || lock.tryLock(timeOutSecs, TimeUnit.SECONDS)) {
-        // ToDo: Logger fine level
-        System.out.println(Thread.currentThread().getName() + ": took lock on " + uuid);
+        logger.fine("Took lock on " + uuid);
       } else {
         throw new NodeException("Unable to acquire lock.");
       }

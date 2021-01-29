@@ -1,5 +1,7 @@
 package entities.transactions;
 
+import exceptions.TransactionException;
+
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -35,10 +37,10 @@ public final class TransactionManager {
     return trans;
   }
 
-  public Transaction getTransaction(Long txID) throws Exception {
+  public Transaction getTransaction(Long txID) throws TransactionException {
     Transaction tx = transactions.get(txID);
     if (null == tx)
-      throw new Exception("Transaction not found."); // ToDo: TransactionException
+      throw new TransactionException("Transaction not found.");
 
     return tx;
   }
