@@ -3,13 +3,15 @@ package entities;
 import common.Logger;
 import exceptions.NodeException;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * The internal node representation. this class is a managing container for all documents within
+ * a named node.
+ */
 public final class NodeInternal {
 
   private static final Logger logger = Logger.getLogger();
@@ -47,6 +49,10 @@ public final class NodeInternal {
 
   public Document getDocument(UUID uuid) {
     return documents.get(uuid);
+  }
+
+  public void addRelationship(String relName, Edge edgeDef) {
+
   }
 
   public void releaseLock(UUID uuid) {

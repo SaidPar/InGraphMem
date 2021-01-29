@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * Package private
  */
-public final class Document {
+public abstract class Document {
 
   private final Map<String, Object> properties;
 

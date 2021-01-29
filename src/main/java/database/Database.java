@@ -8,7 +8,7 @@ import database.types.DBOptions;
 import database.types.DBStatus;
 import database.types.DBType;
 import entities.Node;
-import entities.Relationship;
+import entities.Edge;
 import exceptions.InGraphDBException;
 
 import java.util.HashMap;
@@ -21,7 +21,7 @@ public class Database implements AutoCloseable {
   private final String name;
   private final DBType storageType;
   private final Map<String, Node> nodes;
-  private final Map<String, Relationship> rels;
+  private final Map<String, Edge> rels;
   private DBStatus status;
   private final DBEngine engine;
 
@@ -42,7 +42,7 @@ public class Database implements AutoCloseable {
     }
 
     nodes = new HashMap<String, Node>();
-    rels = new HashMap<String, Relationship>();
+    rels = new HashMap<String, Edge>();
   }
 
   public String getName() {
@@ -69,8 +69,8 @@ public class Database implements AutoCloseable {
     return node;
   }
 
-  public Relationship relationship(String name) throws InGraphDBException {
-    Relationship rel = rels.get(name);
+  public Edge relationship(String name) throws InGraphDBException {
+    Edge rel = rels.get(name);
     if (null == rel)
       throw new InGraphDBException("relationship does not exist.");
 

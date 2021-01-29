@@ -17,7 +17,7 @@ import java.util.Set;
 import java.util.UUID;
 
 /**
- * public facing Node. All CRUD operations occur within transaction implicit or explicit
+ * public facing Node Container. All CRUD operations occur within transaction implicit or explicit
  */
 public class Node {
 

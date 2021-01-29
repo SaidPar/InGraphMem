@@ -1,6 +1,7 @@
 package entities.transactions;
 
 import database.Instance;
+import entities.NodeDocument;
 import entities.NodeInternal;
 import entities.Document;
 import entities.edit_options.UpdateOptions;
@@ -130,6 +131,7 @@ public final class NodeParticipant implements Transactionable, Editable {
       }
     }
 
+    // ToDo: bubble NodeDocument all the way up the stack?
     return insertKeys;
   }
 
@@ -147,7 +149,7 @@ public final class NodeParticipant implements Transactionable, Editable {
       }
 
       internalNode.takeLock(key, 5L);
-      Document updateDoc = new Document(original);
+      NodeDocument updateDoc = new NodeDocument(original);
 
       // Merge Operation - overwrites any property which exists
       for (var prop : updatePartial.getProperties().entrySet()) {
