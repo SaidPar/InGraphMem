@@ -3,7 +3,7 @@ package entities;
 import entities.edit_options.DeleteOptions;
 import entities.edit_options.InsertOptions;
 import entities.edit_options.UpdateOptions;
-import entities.transactions.NodeParticipant;
+import entities.transactions.participants.NodeParticipant;
 import entities.transactions.Transaction;
 import entities.transactions.TransactionManager;
 import entities.transactions.TxStatus;
@@ -29,7 +29,7 @@ public class Node {
     internalNode = new NodeInternal();
   }
 
-  public List<UUID> insert(List<Document> documents, InsertOptions opts) throws InGraphDBException {
+  public List<UUID> insert(List<NodeDocument> documents, InsertOptions opts) throws InGraphDBException {
 
     try {
       TransactionManager txManager = TransactionManager.getInstance();
@@ -59,7 +59,7 @@ public class Node {
     }
   }
 
-  public Map<UUID, Document> update(Map<UUID, Document> updateDocuments, UpdateOptions opts)
+  public Map<UUID, NodeDocument> update(Map<UUID, NodeDocument> updateDocuments, UpdateOptions opts)
     throws InGraphDBException {
 
     try {
@@ -78,7 +78,7 @@ public class Node {
       if (tx.getStatus() != TxStatus.RUNNING)
         throw new InGraphDBException("Transaction not running.");
 
-      Map<UUID, Document> doc;
+      Map<UUID, NodeDocument> doc;
       try {
         NodeParticipant participant = getParticipant(tx);
         doc = participant.update(updateDocuments, opts);
@@ -131,7 +131,7 @@ public class Node {
     }
   }
 
-  public Document getDocument(UUID key) {
+  public NodeDocument getDocument(UUID key) {
     return internalNode.getDocument(key);
   }
 

@@ -2,12 +2,10 @@ package entities;
 
 import common.Constants;
 
-import java.util.UUID;
-
 public final class EdgeDocument extends Document {
 
-  private UUID origin;
-  private UUID destination;
+  private NodeID origin;
+  private NodeID destination;
 
   public EdgeDocument() {
     super();
@@ -15,16 +13,26 @@ public final class EdgeDocument extends Document {
 
   public EdgeDocument(EdgeDocument document) {
     super (document);
-    // todo: deep copy origin / destination
+    // todo: check if assignment is deep copy
+    this.origin = document.origin;
+    this.destination = document.destination;
   }
 
-  public void setOrigin(UUID uuid) {
-    this.origin = uuid;
+  public NodeID getOrigin() {
+    return this.origin;
+  }
+
+  public NodeID getDestination() {
+    return this.destination;
+  }
+
+  public void setOrigin(NodeID origin) {
+    this.origin = origin;
     this.addAttribute(Constants._ORIGIN, origin);
   }
 
-  public void setDestination(UUID uuid) {
-    this.destination = uuid;
+  public void setDestination(NodeID destination) {
+    this.destination = destination;
     this.addAttribute(Constants._DESTINATION, destination);
   }
 }

@@ -4,16 +4,16 @@ import java.util.UUID;
 
 public final class NodePtr {
 
-  private final UUID uuid;
+  private final NodeID nodeID;
   private final Direction direction;
 
-  public NodePtr(UUID uuid, Direction direction) {
-    this.uuid = uuid;
+  public NodePtr(NodeID nodeID, Direction direction) {
+    this.nodeID = nodeID;
     this.direction = direction;
   }
 
-  public UUID getNodeID() {
-    return this.uuid;
+  public NodeID getNodeID() {
+    return this.nodeID;
   }
 
   public Direction getNodeDirection() {

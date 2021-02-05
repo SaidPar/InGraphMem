@@ -15,7 +15,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class NodeInternal {
 
   private static final Logger logger = Logger.getLogger();
-  private final Map<UUID, Document> documents;
+  private final Map<UUID, NodeDocument> documents;
   private final Map<UUID, ReentrantLock> locks;
 
   public NodeInternal() {
@@ -23,9 +23,10 @@ public final class NodeInternal {
     locks = new HashMap<>();
   }
 
-  public void insert(UUID uuid, Document insertDoc) throws NodeException {
+  public void insert(UUID uuid, NodeDocument insertDoc) throws NodeException {
     synchronized (documents) {
       if (!documents.containsKey(uuid)) {
+
         documents.put(uuid, insertDoc);
       } else {
         throw new NodeException("Document with key, " + uuid + ", already exists.");
@@ -33,12 +34,12 @@ public final class NodeInternal {
     }
   }
 
-  public void update(UUID updateUUID, Document updateProps) {
+  public void update(UUID updateUUID, NodeDocument updateProps) {
     documents.replace(updateUUID, updateProps);
   }
 
-  public Document delete(UUID deleteUUID) {
-    Document deleteDoc;
+  public NodeDocument delete(UUID deleteUUID) {
+    NodeDocument deleteDoc;
     synchronized (documents) {
       deleteDoc = documents.get(deleteUUID);
       documents.remove(deleteUUID);
@@ -47,7 +48,7 @@ public final class NodeInternal {
     return deleteDoc;
   }
 
-  public Document getDocument(UUID uuid) {
+  public NodeDocument getDocument(UUID uuid) {
     return documents.get(uuid);
   }
 

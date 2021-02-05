@@ -1,10 +1,11 @@
-package entities.transactions;
+package entities.transactions.participants;
 
 import database.Instance;
 import entities.NodeDocument;
 import entities.NodeInternal;
 import entities.Document;
 import entities.edit_options.UpdateOptions;
+import entities.transactions.Transactionable;
 import exceptions.NodeException;
 
 import java.util.*;
@@ -13,20 +14,20 @@ import java.util.*;
  * This class holds the interim data during the lifetime of the transaction. This is the only class that
  * speaks directly with NodeInternal
  */
-public final class NodeParticipant implements Transactionable, Editable {
+public final class NodeParticipant implements Transactionable, EditableNode {
 
   private final String name;
   private final NodeInternal internalNode;
 
   // Member variables holding interim tx changeset.
-  private final Map<UUID, Document> insertDocs;
-  private final Map<UUID, Document> updateDocuments;
+  private final Map<UUID, NodeDocument> insertDocs;
+  private final Map<UUID, NodeDocument> updateDocuments;
   private final Set<UUID> deleteDocuments;
 
   // Member variables  holding original state for rollback.
   private final List<UUID> insertedKeys;
-  private final Map<UUID, Document> originalUpdateDocs;
-  private final Map<UUID, Document> originalDeleteDocs;
+  private final Map<UUID, NodeDocument> originalUpdateDocs;
+  private final Map<UUID, NodeDocument> originalDeleteDocs;
 
   private final Instance graphInstance;
 
@@ -44,6 +45,10 @@ public final class NodeParticipant implements Transactionable, Editable {
 
     graphInstance = Instance.getInstance();
   }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Transactionable
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   @Override
   public void startTransaction() {
@@ -63,7 +68,7 @@ public final class NodeParticipant implements Transactionable, Editable {
       // update commits
       for (var doc : updateDocuments.entrySet()) {
         UUID uuid = doc.getKey();
-        Document updateDoc = doc.getValue();
+        NodeDocument updateDoc = doc.getValue();
         internalNode.update(uuid, updateDoc);
       }
 
@@ -119,10 +124,14 @@ public final class NodeParticipant implements Transactionable, Editable {
     }
   }
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // EditableNode
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
   @Override
-  public List<UUID> insert(List<Document> documents) {
+  public List<UUID> insert(List<NodeDocument> documents) {
     List<UUID> insertKeys = new ArrayList<>();
-    for (Document doc : documents) {
+    for (NodeDocument doc : documents) {
       UUID newUUID = UUID.randomUUID();
       synchronized(insertDocs) {
         if (!insertDocs.containsKey(newUUID))
@@ -136,14 +145,14 @@ public final class NodeParticipant implements Transactionable, Editable {
   }
 
   @Override
-  public Map<UUID, Document> update(Map<UUID, Document> updatePartialDocuments, UpdateOptions opts)
+  public Map<UUID, NodeDocument> update(Map<UUID, NodeDocument> updatePartialDocuments, UpdateOptions opts)
     throws NodeException {
 
     for (var updateMap : updatePartialDocuments.entrySet()) {
       UUID key = updateMap.getKey();
       Document updatePartial = updateMap.getValue();
 
-      Document original = internalNode.getDocument(key);
+      NodeDocument original = internalNode.getDocument(key);
       if (null == original) {
         throw new NodeException("Document with key, " + key + ", does not exist.");
       }
@@ -182,6 +191,10 @@ public final class NodeParticipant implements Transactionable, Editable {
       }
     }
   }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Helpers
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
   private void releaseLocks() {
     // release update locks
