@@ -42,6 +42,8 @@ public class EdgeInternal {
     try {
       NodeID originNode = edgeDoc.getOrigin();
 
+      // These are direct writes to the document, and skirt the regular transaction model
+      //  ToDo: This feels wrong here
       database
         .node(originNode.getNodeName())
         .getDocument(originNode.getUUID())

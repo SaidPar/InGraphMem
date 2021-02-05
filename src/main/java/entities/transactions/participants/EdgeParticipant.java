@@ -51,6 +51,10 @@ public final class EdgeParticipant implements Transactionable, EditableEdge {
   @Override
   public void commitTransaction() throws NodeException {
     // Todo: commit changeset updates to internal edge
+
+    // inserts
+    // ToDo: insert into internal edge
+    // what to do about internal node changes?
   }
 
   @Override
@@ -69,17 +73,29 @@ public final class EdgeParticipant implements Transactionable, EditableEdge {
 
   @Override
   public List<UUID> insert(List<EdgeDocument> documents) {
+    // ToDo: Insert into changeset
+    //    Insert into nodes as well? Can i farm changes to nodeparticipant? too much coupling?
+    // ToDo: take lock on origin / dest nodes(?)
+
     return null;
   }
 
   @Override
   public Map<UUID, EdgeDocument> update(Map<UUID, EdgeDocument> updateDocuments, UpdateOptions options)
     throws EdgeException {
+
+    // ToDo: merge any updates into existing doc
+    //  take rel lock
+    //  if updates to origin / dest nodes, take node locks
+
+
     return null;
   }
 
   @Override
   public void delete(Set<UUID> deleteKeys) throws EdgeException {
-
+    // ToDo: take lock on rel
+    //  take lock on nodes
+    //  add to deleteDocs
   }
 }

@@ -168,6 +168,8 @@ public final class NodeParticipant implements Transactionable, EditableNode {
         updateDoc.addAttribute(propName, propVal);
       }
 
+      // ToDo: what to do if they already exist? and this is the 2+ update
+      // for example internal updates to origin / dest
       originalUpdateDocs.put(key, original);
       updateDocuments.put(key, updateDoc);
     }
