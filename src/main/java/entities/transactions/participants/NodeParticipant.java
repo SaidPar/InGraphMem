@@ -3,7 +3,6 @@ package entities.transactions.participants;
 import database.Instance;
 import entities.NodeDocument;
 import entities.NodeInternal;
-import entities.Document;
 import entities.edit_options.UpdateOptions;
 import entities.transactions.Transactionable;
 import exceptions.NodeException;
@@ -150,7 +149,7 @@ public final class NodeParticipant implements Transactionable, EditableNode {
 
     for (var updateMap : updatePartialDocuments.entrySet()) {
       UUID key = updateMap.getKey();
-      Document updatePartial = updateMap.getValue();
+      NodeDocument updatePartial = updateMap.getValue();
 
       NodeDocument original = internalNode.getDocument(key);
       if (null == original) {

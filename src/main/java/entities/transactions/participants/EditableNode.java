@@ -1,6 +1,5 @@
 package entities.transactions.participants;
 
-import entities.Document;
 import entities.NodeDocument;
 import entities.edit_options.UpdateOptions;
 import exceptions.NodeException;

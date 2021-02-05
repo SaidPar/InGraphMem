@@ -33,6 +33,12 @@ public class NodeDocument extends Document {
     }
   }
 
+  @Override
+  public NodeDocument addAttribute(String attributeName, Object value) {
+    super.addAttribute(attributeName, value);
+    return this;
+  }
+
   // ToDo: we don't want to expose this publicly, it should be acquired through query
 //  public Set<NodePtr> getRelatedNodes(String relationshipName) {
 //    return relatedNodes.get(relationshipName);

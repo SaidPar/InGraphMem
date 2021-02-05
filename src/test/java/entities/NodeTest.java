@@ -20,9 +20,9 @@ class NodeTest {
 
     Node testNode = new Node("test");
 
-    List<Document> documents = new ArrayList<>();
+    List<NodeDocument> documents = new ArrayList<>();
     documents.add(
-      new Document()
+      new NodeDocument()
         .addAttribute("test1", "test1")
         .addAttribute("test2" ,2)
     );
@@ -31,7 +31,7 @@ class NodeTest {
     assertNotNull(insertKeys);
     assertEquals(1, insertKeys.size());
 
-    Document insertDoc = testNode.getDocument(insertKeys.get(0));
+    NodeDocument insertDoc = testNode.getDocument(insertKeys.get(0));
     assertEquals("test1", insertDoc.getAttribute("test1"));
   }
 
@@ -44,8 +44,8 @@ class NodeTest {
 
     tx.start();
 
-    List<Document> doc1List = new ArrayList<>();
-    doc1List.add(new Document()
+    List<NodeDocument> doc1List = new ArrayList<>();
+    doc1List.add((NodeDocument) new NodeDocument()
       .addAttribute("test1", "test1"));
 
     List<UUID> insert1Keys = testNode.insert(doc1List, new InsertOptions().withTransactionID(tx.getID()));
@@ -53,8 +53,8 @@ class NodeTest {
     assertNotNull(insert1Keys);
     assertNull(testNode.getDocument(insert1Keys.get(0)));
 
-    List<Document> doc2List = new ArrayList<>();
-    doc2List.add(new Document()
+    List<NodeDocument> doc2List = new ArrayList<>();
+    doc2List.add((NodeDocument) new NodeDocument()
       .addAttribute("test2", "test2"));
 
     List<UUID> insert2Keys = testNode.insert(doc2List, new InsertOptions().withTransactionID(tx.getID()));
@@ -76,8 +76,8 @@ class NodeTest {
     Transaction tx = TransactionManager.getInstance().createTransaction();
     tx.start();
 
-    List<Document> doc1List = new ArrayList<>();
-    doc1List.add(new Document()
+    List<NodeDocument> doc1List = new ArrayList<>();
+    doc1List.add((NodeDocument) new NodeDocument()
       .addAttribute("test1", "test1"));
 
     List<UUID> node1Keys = testNode1.insert(doc1List, new InsertOptions().withTransactionID(tx.getID()));
@@ -98,10 +98,10 @@ class NodeTest {
   void delete() throws Exception {
     Node testNode = new Node("test");
 
-    List<Document> documents = new ArrayList<>();
-    documents.add(new Document().addAttribute("test1", 1));
-    documents.add(new Document().addAttribute("test1", 1));
-    documents.add(new Document().addAttribute("test1", 1));
+    List<NodeDocument> documents = new ArrayList<>();
+    documents.add((NodeDocument)new NodeDocument().addAttribute("test1", 1));
+    documents.add((NodeDocument)new NodeDocument().addAttribute("test1", 1));
+    documents.add((NodeDocument)new NodeDocument().addAttribute("test1", 1));
 
     List<UUID> insertKeys = testNode.insert(documents, new InsertOptions());
     assertNotNull(insertKeys);
@@ -111,7 +111,7 @@ class NodeTest {
       assertNotNull(testNode.getDocument(key));
     }
 
-    testNode.delete(new HashSet<UUID>(insertKeys), new DeleteOptions());
+    testNode.delete(new HashSet<>(insertKeys), new DeleteOptions());
 
     for (UUID key : insertKeys) {
       assertNull(testNode.getDocument(key));
@@ -122,9 +122,9 @@ class NodeTest {
   void update() throws Exception {
     Node testNode = new Node("test");
 
-    List<Document> documents = new ArrayList<>();
+    List<NodeDocument> documents = new ArrayList<>();
     documents.add(
-      new Document()
+      (NodeDocument) new NodeDocument()
         .addAttribute("test1", "test1")
         .addAttribute("test2" ,2)
     );
@@ -133,12 +133,12 @@ class NodeTest {
     assertNotNull(insertKeys);
     assertEquals(1, insertKeys.size());
 
-    Map<UUID, Document> updateDocs = new HashMap<>();
+    Map<UUID, NodeDocument> updateDocs = new HashMap<>();
     updateDocs.put(insertKeys.get(0),
-      new Document()
+      (NodeDocument) new NodeDocument()
         .addAttribute("test1", 3));
 
-    Map<UUID, Document> originals = testNode.update(updateDocs, new UpdateOptions().returnOld());
+    Map<UUID, NodeDocument> originals = testNode.update(updateDocs, new UpdateOptions().returnOld());
     Document originalDoc = originals.get(insertKeys.get(0));
     assertEquals("test1", originalDoc.getAttribute("test1"));
 
@@ -152,9 +152,9 @@ class NodeTest {
   void multipleUpdates() throws Exception {
     Node testNode = new Node("test");
 
-    List<Document> documents = new ArrayList<>();
+    List<NodeDocument> documents = new ArrayList<>();
     documents.add(
-      new Document()
+      (NodeDocument) new NodeDocument()
         .addAttribute("test1", "test1")
         .addAttribute("test2" ,2)
     );
@@ -167,9 +167,9 @@ class NodeTest {
 
     CompletableFuture f1 =
       CompletableFuture.runAsync(() -> {
-        Map<UUID, Document> updateDocs = new HashMap<>();
+        Map<UUID, NodeDocument> updateDocs = new HashMap<>();
         updateDocs.put(insertKeys.get(0),
-          new Document()
+          (NodeDocument) new NodeDocument()
             .addAttribute("test1", 1));
         try {
           Transaction tx = TransactionManager.getInstance()
@@ -187,9 +187,9 @@ class NodeTest {
       });
     CompletableFuture f2 =
       CompletableFuture.runAsync(() -> {
-        Map<UUID, Document> updateDocs = new HashMap<>();
+        Map<UUID, NodeDocument> updateDocs = new HashMap<>();
         updateDocs.put(insertKeys.get(0),
-          new Document()
+          (NodeDocument) new NodeDocument()
             .addAttribute("test1", 2));
         try {
           testNode.update(updateDocs, new UpdateOptions());
