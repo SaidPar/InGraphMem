@@ -14,7 +14,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class EdgeInternal {
 
   private static final Logger logger = Logger.getLogger();
-  private final Map<UUID, Document> documents;
+  private final Map<UUID, EdgeDocument> documents;
   private final Map<UUID, ReentrantLock> locks;
   private final Database database;
   private final String relName;
@@ -71,5 +71,9 @@ public class EdgeInternal {
     // ToDo: delete entry from documents map
     // ToDo: delete NodePtr from IFA
     return new EdgeDocument();
+  }
+
+  public EdgeDocument getDocument(UUID uuid) {
+    return documents.get(uuid);
   }
 }

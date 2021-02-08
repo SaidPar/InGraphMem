@@ -61,6 +61,16 @@ public class Database implements AutoCloseable {
     }
   }
 
+  public Node createNode(String name) throws InGraphDBException {
+    synchronized (nodes) {
+      if (nodes.containsKey(name))
+        throw new InGraphDBException("node already exists.");
+
+      nodes.put(name, new Node(name));
+      return nodes.get(name);
+    }
+  }
+
   public Node node(String name) throws InGraphDBException {
     Node node = nodes.get(name);
     if (null == node)

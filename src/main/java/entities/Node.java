@@ -132,10 +132,11 @@ public class Node {
   }
 
   public NodeDocument getDocument(UUID key) {
+    // ToDo: Take read lock
     return internalNode.getDocument(key);
   }
 
-  private NodeParticipant getParticipant(Transaction tx) {
+  NodeParticipant getParticipant(Transaction tx) {
     NodeParticipant participant = (NodeParticipant) tx.getParticipant(name);
     if (null == participant) {
       participant = new NodeParticipant(name, this.internalNode);

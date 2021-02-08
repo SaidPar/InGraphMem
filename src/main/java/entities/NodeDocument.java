@@ -21,7 +21,11 @@ public class NodeDocument extends Document {
     relatedNodes = new HashMap<>();
   }
 
-  public void addRelationship(String relationshipName, NodePtr relatedNode) {
+  public boolean hasRelationship() {
+    return !relatedNodes.isEmpty();
+  }
+
+  public NodeDocument addRelationship(String relationshipName, NodePtr relatedNode) {
 
     synchronized(relatedNodes) {
       if (!relatedNodes.containsKey(relationshipName)) {
@@ -31,6 +35,16 @@ public class NodeDocument extends Document {
       Set<NodePtr> connectedNodeSet = relatedNodes.get(relationshipName);
       connectedNodeSet.add(relatedNode);
     }
+
+    return this;
+  }
+
+  public Set<NodePtr> getAdjacentNodes(String relationshipName) {
+    return relatedNodes.get(relationshipName);
+  }
+
+  public Map<String, Set<NodePtr>> getAllRelationships() {
+    return relatedNodes;
   }
 
   @Override

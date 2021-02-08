@@ -3,6 +3,7 @@ package entities.transactions.participants;
 import database.Instance;
 import entities.NodeDocument;
 import entities.NodeInternal;
+import entities.NodePtr;
 import entities.edit_options.UpdateOptions;
 import entities.transactions.Transactionable;
 import exceptions.NodeException;
@@ -169,6 +170,20 @@ public final class NodeParticipant implements Transactionable, EditableNode {
 
       // ToDo: what to do if they already exist? and this is the 2+ update
       // for example internal updates to origin / dest
+      if (updatePartial.hasRelationship()) {
+        // new relationship in partial document.
+        // ToDo: Do we need to check these are valid relationships and not already existing in original doc?
+        Map<String, Set<NodePtr>> newRels = updatePartial.getAllRelationships();
+        for (var map : newRels.entrySet()) {
+          String relName = map.getKey();
+          Set<NodePtr> adjacentNodes = map.getValue();
+
+          for (NodePtr node : adjacentNodes) {
+            updateDoc.addRelationship(relName, node);
+          }
+        }
+      }
+
       originalUpdateDocs.put(key, original);
       updateDocuments.put(key, updateDoc);
     }

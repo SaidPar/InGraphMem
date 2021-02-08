@@ -26,13 +26,15 @@ public final class EdgeDocument extends Document {
     return this.destination;
   }
 
-  public void setOrigin(NodeID origin) {
+  public EdgeDocument setOrigin(NodeID origin) {
     this.origin = origin;
     this.addAttribute(Constants._ORIGIN, origin);
+    return this;
   }
 
-  public void setDestination(NodeID destination) {
+  public EdgeDocument setDestination(NodeID destination) {
     this.destination = destination;
     this.addAttribute(Constants._DESTINATION, destination);
+    return this;
   }
 }

@@ -1,9 +1,6 @@
 package entities.transactions.participants;
 
-import entities.EdgeDocument;
-import entities.EdgeInternal;
-import entities.NodeDocument;
-import entities.NodeInternal;
+import entities.*;
 import entities.edit_options.UpdateOptions;
 import entities.transactions.Transactionable;
 import exceptions.EdgeException;
@@ -75,9 +72,21 @@ public final class EdgeParticipant implements Transactionable, EditableEdge {
   public List<UUID> insert(List<EdgeDocument> documents) {
     // ToDo: Insert into changeset
     //    Insert into nodes as well? Can i farm changes to nodeparticipant? too much coupling?
-    // ToDo: take lock on origin / dest nodes(?)
+    // ToDo: take lock on origin / dest nodes(?) - Handled in Edge, we get node participants
 
-    return null;
+    List<UUID> insertKeys = new ArrayList<>();
+    for (EdgeDocument doc : documents) {
+      UUID newUUID = UUID.randomUUID();
+      synchronized(insertDocs) {
+        if (!insertDocs.containsKey(newUUID)) {
+          insertDocs.put(newUUID, doc);
+        }
+
+        insertKeys.add(newUUID);
+      }
+    }
+
+    return insertKeys;
   }
 
   @Override
