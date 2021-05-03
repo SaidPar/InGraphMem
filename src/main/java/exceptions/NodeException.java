@@ -1,6 +1,6 @@
 package exceptions;
 
-public class NodeException extends Exception {
+public class NodeException extends GraphException {
 
   public NodeException() {
     super();

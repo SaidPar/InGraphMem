@@ -1,6 +1,6 @@
 package exceptions;
 
-public class EdgeException extends Exception {
+public class EdgeException extends GraphException {
   public EdgeException() {
     super();
   }

@@ -10,9 +10,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -64,14 +62,15 @@ public class EdgeTest {
     UUID destKey = insertKeys.get(1);
 
     // Test Case
-    Edge testEdge = new Edge(dbName, "testRel");
+    String testRel = "testRel";
+    Edge testEdge = new Edge(dbName, testRel);
 
     List<EdgeDocument> relDocs = new ArrayList<>();
     relDocs.add(
       (EdgeDocument) new EdgeDocument()
         .setOrigin(new NodeID(test, originKey))
         .setDestination(new NodeID(test, destKey))
-        .addAttribute("name", "relationsip"));
+        .addAttribute("name", "relationship"));
 
     List<UUID> relInsertKeys = testEdge.insert(relDocs, new InsertOptions());
     assertEquals(1, relInsertKeys.size());
@@ -80,6 +79,21 @@ public class EdgeTest {
     assertEquals(actualEdge.getDestination().getUUID(), destKey);
     assertEquals(actualEdge.getOrigin().getUUID(), originKey);
     assertEquals(actualEdge.getAttribute("name"), "relationship");
+
+    NodeDocument originNode = edgeDB.node(test).getDocument(originKey);
+    Map<String, Set<NodePtr>> rels = originNode.getAllRelationships();
+    for (var rel : rels.entrySet()) {
+      String relName = rel.getKey();
+      Set<NodePtr> adjacentNodes = rel.getValue();
+
+      assertEquals(testRel, relName);
+      assertEquals(1, adjacentNodes.size());
+      NodePtr destNode = adjacentNodes
+        .stream()
+        .filter(node -> node.getNodeID().getUUID().equals(destKey))
+        .findAny().orElse(null);
+      assertNotNull(destNode);
+    }
   }
 
 }

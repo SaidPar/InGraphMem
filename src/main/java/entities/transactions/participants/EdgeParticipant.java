@@ -4,6 +4,7 @@ import entities.*;
 import entities.edit_options.UpdateOptions;
 import entities.transactions.Transactionable;
 import exceptions.EdgeException;
+import exceptions.GraphException;
 import exceptions.NodeException;
 
 import java.util.*;
@@ -46,17 +47,27 @@ public final class EdgeParticipant implements Transactionable, EditableEdge {
   }
 
   @Override
-  public void commitTransaction() throws NodeException {
-    // Todo: commit changeset updates to internal edge
+  public void commitTransaction() throws GraphException {
 
     // inserts
-    // ToDo: insert into internal edge
-    // what to do about internal node changes?
+    for (var insertDoc : insertDocs.entrySet()) {
+      UUID uuid = insertDoc.getKey();
+      EdgeDocument edgeDoc = insertDoc.getValue();
+
+      internalEdge.insert(uuid, edgeDoc);
+      insertedKeys.add(uuid);
+    }
+
+    // ToDo: Updates
+    // ToDo: Deletes
   }
 
   @Override
   public void abortTransaction() {
     // ToDo: clear changesets
+    insertDocs.clear();
+    updateDocuments.clear();
+    deleteDocuments.clear();
   }
 
   @Override

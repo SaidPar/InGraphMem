@@ -1,11 +1,11 @@
 package entities.transactions;
 
-import exceptions.NodeException;
+import exceptions.GraphException;
 
 public interface Transactionable {
   void startTransaction();
 
-  void commitTransaction() throws NodeException;
+  void commitTransaction() throws GraphException;
 
   void abortTransaction();
 

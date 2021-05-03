@@ -36,30 +36,6 @@ public class EdgeInternal {
         throw new EdgeException("Document with key, " + uuid + ", already exists.");
       }
     }
-
-    // Update NodeDocument index-free-adjacency
-    // ToDo: Should this be part of edge participant? Rolled into transaction semantics
-    try {
-      NodeID originNode = edgeDoc.getOrigin();
-
-      // These are direct writes to the document, and skirt the regular transaction model
-      //  ToDo: This feels wrong here
-      database
-        .node(originNode.getNodeName())
-        .getDocument(originNode.getUUID())
-        .addRelationship(relName, new NodePtr(originNode, Direction.ORIGIN));
-
-      NodeID destNode = edgeDoc.getDestination();
-      database
-        .node(destNode.getNodeName())
-        .getDocument(destNode.getUUID())
-        .addRelationship(relName, new NodePtr(destNode, Direction.DESTINATION));
-
-    } catch (Exception e) {
-      // ToDo: if we fail here, it's really bad, and we're in an inconsistent state.
-      //  remove from documents? Do we need to synchronize entire operation?
-      throw new EdgeException(e);
-    }
   }
 
   public void update() {

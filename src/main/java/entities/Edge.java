@@ -91,20 +91,21 @@ public final class Edge {
 
       // ToDo: Think about locking here, since we are now in a get and set procedure
       // ToDo: Error handling strategy? what if nodes don't exist?
+      // ToDo: What if nodes are part of current transaction
       NodeID originNodeID = doc.getOrigin();
+      NodeID destNodeID = doc.getDestination();
 
       // partial document for updates
       NodeDocument originDoc = new NodeDocument()
-        .addRelationship(this.name, new NodePtr(originNodeID, Direction.ORIGIN));
+        .addRelationship(this.name, new NodePtr(destNodeID, Direction.DESTINATION));
 
       db.node(originNodeID.getNodeName())
         .getParticipant(tx)
         .update(Map.of(originNodeID.getUUID(), originDoc),
           new UpdateOptions().withTransactionID(tx.getID()));
 
-      NodeID destNodeID = doc.getDestination();
       NodeDocument destDoc = new NodeDocument()
-        .addRelationship(this.name, new NodePtr(destNodeID, Direction.DESTINATION));
+        .addRelationship(this.name, new NodePtr(originNodeID, Direction.ORIGIN));
 
       db.node(destNodeID.getNodeName())
         .getParticipant(tx)
