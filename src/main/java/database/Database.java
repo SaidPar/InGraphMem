@@ -79,6 +79,16 @@ public class Database implements AutoCloseable {
     return node;
   }
 
+  public Edge createRelationship(String relName) throws InGraphDBException {
+    synchronized (rels) {
+      if (rels.containsKey(relName))
+        throw new InGraphDBException("edge already exists.");
+
+      rels.put(relName, new Edge(this.name, relName));
+      return rels.get(relName);
+    }
+  }
+
   public Edge relationship(String name) throws InGraphDBException {
     Edge rel = rels.get(name);
     if (null == rel)

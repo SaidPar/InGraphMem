@@ -152,13 +152,26 @@ public final class NodeParticipant implements Transactionable, EditableNode {
       UUID key = updateMap.getKey();
       NodeDocument updatePartial = updateMap.getValue();
 
-      NodeDocument original = internalNode.getDocument(key);
-      if (null == original) {
+      // We should first check the transaction context for updating nodes. We may be updating
+      // a document which has already participated in the transaction explicitly or implicitly
+      NodeDocument workingDoc;
+      if (this.updateDocuments.containsKey(key)) {
+        workingDoc = updateDocuments.get(key);
+      } else if (this.insertDocs.containsKey(key)) {
+        workingDoc = insertDocs.get(key);
+      } else if (internalNode.getDocument(key) != null) {
+        workingDoc = internalNode.getDocument(key);
+
+        // we only take a lock when there exists an entry in the internal node
+        internalNode.takeLock(key, 5L);
+
+        // this is used for roll back. Track only original value.
+        originalUpdateDocs.put(key, workingDoc);
+      } else {
         throw new NodeException("Document with key, " + key + ", does not exist.");
       }
 
-      internalNode.takeLock(key, 5L);
-      NodeDocument updateDoc = new NodeDocument(original);
+      NodeDocument updateDoc = new NodeDocument(workingDoc);
 
       // Merge Operation - overwrites any property which exists
       for (var prop : updatePartial.getProperties().entrySet()) {
@@ -168,8 +181,6 @@ public final class NodeParticipant implements Transactionable, EditableNode {
         updateDoc.addAttribute(propName, propVal);
       }
 
-      // ToDo: what to do if they already exist? and this is the 2+ update
-      // for example internal updates to origin / dest
       if (updatePartial.hasRelationship()) {
         // new relationship in partial document.
         // ToDo: Do we need to check these are valid relationships and not already existing in original doc?
@@ -184,7 +195,6 @@ public final class NodeParticipant implements Transactionable, EditableNode {
         }
       }
 
-      originalUpdateDocs.put(key, original);
       updateDocuments.put(key, updateDoc);
     }
 

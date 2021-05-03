@@ -5,6 +5,8 @@ import database.Instance;
 import database.types.DBOptions;
 import database.types.DBType;
 import entities.edit_options.InsertOptions;
+import entities.transactions.Transaction;
+import entities.transactions.TransactionManager;
 import exceptions.InGraphDBException;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -96,4 +98,74 @@ public class EdgeTest {
     }
   }
 
+  @Test
+  void insertInTx() throws InGraphDBException {
+    // Setup
+    String personNodeName = "Person";
+    String vehicleNodeName = "Vehicle";
+    String ownsRelName = "OWNS";
+
+    Node personNode = edgeDB.createNode(personNodeName);
+    Node vehicleNode = edgeDB.createNode(vehicleNodeName);
+    Edge ownsRel = edgeDB.createRelationship(ownsRelName);
+
+    // Test Case
+    Transaction tx = TransactionManager.getInstance()
+      .createTransaction();
+
+    tx.start();
+
+    List<NodeDocument> personNodes = new ArrayList<>();
+    personNodes.add(new NodeDocument()
+      .addAttribute("name", "Bill Brasky"));
+
+    List<UUID> personUUIDs = personNode.insert(personNodes, new InsertOptions().withTransactionID(tx.getID()));
+    UUID billUUID = personUUIDs.get(0);
+
+    List<NodeDocument> vehicleNodes = new ArrayList<>();
+    vehicleNodes.add(new NodeDocument()
+      .addAttribute("make", "Toyota")
+      .addAttribute("model", "Tacoma"));
+    vehicleNodes.add(new NodeDocument()
+      .addAttribute("make", "BMW")
+      .addAttribute("model", "e30"));
+
+    List<UUID> vehicleUUIDs = vehicleNode.insert(vehicleNodes, new InsertOptions().withTransactionID(tx.getID()));
+    UUID tacoUUID = vehicleUUIDs.get(0);
+    UUID bmwUUID = vehicleUUIDs.get(1);
+
+    List<EdgeDocument> ownsDocs = new ArrayList<>();
+    ownsDocs.add(new EdgeDocument()
+      .setOrigin(new NodeID(personNodeName, billUUID))
+      .setDestination(new NodeID(vehicleNodeName, tacoUUID)));
+    ownsDocs.add(new EdgeDocument()
+      .setOrigin(new NodeID(personNodeName, billUUID))
+      .setDestination(new NodeID(vehicleNodeName, bmwUUID)));
+
+    List<UUID> ownsUUIDs = ownsRel.insert(ownsDocs, new InsertOptions().withTransactionID(tx.getID()));
+
+    tx.commit();
+
+    Node persons = edgeDB.node(personNodeName);
+    NodeDocument billNode = persons.getDocument(billUUID);
+    Map<String, Set<NodePtr>> rels = billNode.getAllRelationships();
+    assertEquals(1, rels.size());
+    for (var rel : rels.entrySet()) {
+      String relName = rel.getKey();
+      Set<NodePtr> destNodes = rel.getValue();
+
+      assertEquals(ownsRelName, relName);
+      assertEquals(2, destNodes.size());
+
+      var tacoNode = destNodes
+        .stream().filter(nodePtr -> nodePtr.getNodeID().getUUID().equals(tacoUUID))
+        .findAny().orElse(null);
+      assertNotNull(tacoNode);
+
+      var bmwNode = destNodes
+        .stream().filter(nodePtr -> nodePtr.getNodeID().getUUID().equals(bmwUUID))
+        .findAny().orElse(null);
+      assertNotNull(bmwNode);
+    }
+  }
 }

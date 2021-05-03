@@ -15,10 +15,11 @@ public class NodeDocument extends Document {
     relatedNodes = new HashMap<>();
   }
 
-  public NodeDocument(Document doc) {
+  public NodeDocument(NodeDocument doc) {
     super(doc);
-    // todo: deep copy of related nodes?
-    relatedNodes = new HashMap<>();
+
+    // deep copy of related nodes
+    relatedNodes = new HashMap<>(doc.getAllRelationships());
   }
 
   public boolean hasRelationship() {
