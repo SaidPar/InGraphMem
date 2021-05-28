@@ -31,6 +31,7 @@ public class Transaction implements AutoCloseable {
     try {
       for (var participant : participants.entrySet()) {
         Transactionable txWorker = participant.getValue();
+
         txWorker.commitTransaction();
         committed.add(txWorker);
       }

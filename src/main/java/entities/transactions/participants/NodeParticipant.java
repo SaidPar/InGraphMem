@@ -85,8 +85,8 @@ public final class NodeParticipant implements Transactionable, EditableNode {
 
   @Override
   public void abortTransaction() {
-    // throw away change set
-    // Post commit, should we roll back?
+    // Throw away change sets
+    // ToDo: Post commit, should we roll back?
     insertedKeys.clear();
     updateDocuments.clear();
     deleteDocuments.clear();
@@ -183,7 +183,7 @@ public final class NodeParticipant implements Transactionable, EditableNode {
 
       if (updatePartial.hasRelationship()) {
         // new relationship in partial document.
-        // ToDo: Do we need to check these are valid relationships and not already existing in original doc?
+        // ToDo: Do we need to check these are valid relationships?
         Map<String, Set<NodePtr>> newRels = updatePartial.getAllRelationships();
         for (var map : newRels.entrySet()) {
           String relName = map.getKey();
@@ -191,6 +191,19 @@ public final class NodeParticipant implements Transactionable, EditableNode {
 
           for (NodePtr node : adjacentNodes) {
             updateDoc.addRelationship(relName, node);
+          }
+        }
+      }
+
+      if (updatePartial.hasRemoveNodes()) {
+        // remove relationship
+        Map<String, Set<NodePtr>> removeNodes = updatePartial.getAllRemoveNodes();
+        for (var map : removeNodes.entrySet()) {
+          String relName = map.getKey();
+          Set<NodePtr> adjacentNodes = map.getValue();
+
+          for (NodePtr node : adjacentNodes) {
+            updateDoc.removeRelationship(relName, node);
           }
         }
       }

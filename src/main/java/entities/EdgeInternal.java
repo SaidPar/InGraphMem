@@ -38,9 +38,8 @@ public class EdgeInternal {
     }
   }
 
-  public void update() {
-    // ToDo: update documents map
-    // ToDo: update IFA as needed
+  public void update(UUID updateKey, EdgeDocument updateDoc) {
+    documents.replace(updateKey, updateDoc);
   }
 
   public EdgeDocument delete() {

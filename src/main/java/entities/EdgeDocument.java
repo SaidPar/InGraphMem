@@ -13,9 +13,10 @@ public final class EdgeDocument extends Document {
 
   public EdgeDocument(EdgeDocument document) {
     super (document);
-    // todo: check if assignment is deep copy
-    this.origin = document.origin;
-    this.destination = document.destination;
+
+    // deep copy of member variables
+    this.origin = new NodeID(document.origin.getNodeName(), document.origin.getUUID());
+    this.destination = new NodeID(document.destination.getNodeName(), document.destination.getUUID());
   }
 
   public NodeID getOrigin() {

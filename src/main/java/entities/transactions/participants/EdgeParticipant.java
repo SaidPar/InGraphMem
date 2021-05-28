@@ -15,7 +15,7 @@ public final class EdgeParticipant implements Transactionable, EditableEdge {
   private final EdgeInternal internalEdge;
 
   // Member variables holding interim tx changeset.
-  private final Map<UUID, EdgeDocument> insertDocs;
+  private final Map<UUID, EdgeDocument> insertDocuments;
   private final Map<UUID, EdgeDocument> updateDocuments;
   private final Set<UUID> deleteDocuments;
 
@@ -28,7 +28,7 @@ public final class EdgeParticipant implements Transactionable, EditableEdge {
     this.name = name;
     this.internalEdge = internalEdge;
 
-    insertDocs = new HashMap<>();
+    insertDocuments = new HashMap<>();
     updateDocuments = new HashMap<>();
     deleteDocuments = new HashSet<>();
 
@@ -50,7 +50,7 @@ public final class EdgeParticipant implements Transactionable, EditableEdge {
   public void commitTransaction() throws GraphException {
 
     // inserts
-    for (var insertDoc : insertDocs.entrySet()) {
+    for (var insertDoc : insertDocuments.entrySet()) {
       UUID uuid = insertDoc.getKey();
       EdgeDocument edgeDoc = insertDoc.getValue();
 
@@ -58,14 +58,21 @@ public final class EdgeParticipant implements Transactionable, EditableEdge {
       insertedKeys.add(uuid);
     }
 
-    // ToDo: Updates
+    // updates
+    for (var updateDoc : updateDocuments.entrySet()) {
+      UUID uuid = updateDoc.getKey();
+      EdgeDocument edgeDocument = updateDoc.getValue();
+      internalEdge.update(uuid, edgeDocument);
+    }
+
     // ToDo: Deletes
   }
 
   @Override
   public void abortTransaction() {
-    // ToDo: clear changesets
-    insertDocs.clear();
+    // Clear any changesets
+    // ToDo: Post commit, should we rollback?
+    insertDocuments.clear();
     updateDocuments.clear();
     deleteDocuments.clear();
   }
@@ -81,16 +88,13 @@ public final class EdgeParticipant implements Transactionable, EditableEdge {
 
   @Override
   public List<UUID> insert(List<EdgeDocument> documents) {
-    // ToDo: Insert into changeset
-    //    Insert into nodes as well? Can i farm changes to nodeparticipant? too much coupling?
-    // ToDo: take lock on origin / dest nodes(?) - Handled in Edge, we get node participants
 
     List<UUID> insertKeys = new ArrayList<>();
     for (EdgeDocument doc : documents) {
       UUID newUUID = UUID.randomUUID();
-      synchronized(insertDocs) {
-        if (!insertDocs.containsKey(newUUID)) {
-          insertDocs.put(newUUID, doc);
+      synchronized(insertDocuments) {
+        if (!insertDocuments.containsKey(newUUID)) {
+          insertDocuments.put(newUUID, doc);
         }
 
         insertKeys.add(newUUID);
@@ -101,15 +105,59 @@ public final class EdgeParticipant implements Transactionable, EditableEdge {
   }
 
   @Override
-  public Map<UUID, EdgeDocument> update(Map<UUID, EdgeDocument> updateDocuments, UpdateOptions options)
+  public Map<UUID, EdgeDocument> update(Map<UUID, EdgeDocument> updatePartialDocs, UpdateOptions options)
     throws EdgeException {
 
-    // ToDo: merge any updates into existing doc
-    //  take rel lock
-    //  if updates to origin / dest nodes, take node locks
+    for (var updateDoc : updatePartialDocs.entrySet()) {
+      UUID docKey = updateDoc.getKey();
+      EdgeDocument partialEdgeDoc = updateDoc.getValue();
 
+      EdgeDocument workingEdge;
+      if (updateDocuments.containsKey(docKey)) {
+        workingEdge = updateDocuments.get(docKey);
+      } else if (insertDocuments.containsKey(docKey)) {
+        workingEdge = insertDocuments.get(docKey);
+      } else if (internalEdge.getDocument(docKey) != null) {
+        workingEdge = internalEdge.getDocument(docKey);
 
-    return null;
+        // we only take a lock when there exists an entry in the internal node
+        // ToDo: Deadlock scenarios?
+        // ToDo: internalEdge.takeLock(docKey, 5L);
+
+        // this is used for roll back. Track only original value.
+        originalUpdateDocs.put(docKey, workingEdge);
+      } else {
+        throw new EdgeException("Edge Document with key, " + docKey + ", does not exist.");
+      }
+
+      EdgeDocument updateEdge = new EdgeDocument(workingEdge);
+
+      // Merge Operation - overwrites any property which exists
+      for (var prop : partialEdgeDoc.getProperties().entrySet()) {
+        String propName = prop.getKey();
+        Object propVal = prop.getValue();
+
+        updateEdge.addAttribute(propName, propVal);
+      }
+
+      // Handle origin / dest updates
+      if (partialEdgeDoc.getOrigin() != null) {
+        updateEdge.setOrigin(partialEdgeDoc.getOrigin());
+      }
+
+      if (partialEdgeDoc.getDestination() != null) {
+        updateEdge.setDestination(partialEdgeDoc.getDestination());
+      }
+
+      updateDocuments.put(docKey, updateEdge);
+    } // end for (..partial docs..)
+
+    if (options.canReturnNew())
+      return updateDocuments;
+    else if (options.canReturnOld())
+      return originalUpdateDocs;
+    else
+      return null;
   }
 
   @Override

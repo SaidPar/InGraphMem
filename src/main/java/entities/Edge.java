@@ -8,10 +8,7 @@ import entities.transactions.Transaction;
 import entities.transactions.TransactionManager;
 import entities.transactions.TxStatus;
 import entities.transactions.participants.EdgeParticipant;
-import entities.transactions.participants.NodeParticipant;
-import exceptions.InGraphDBException;
-import exceptions.NodeException;
-import exceptions.TransactionException;
+import exceptions.*;
 
 import java.util.*;
 
@@ -49,19 +46,56 @@ public final class Edge {
       EdgeParticipant participant = getParticipant(tx);
       List<UUID> insertKeys = participant.insert(documents);
 
-      updateNodeAdjacency(documents, tx);
+      addNodeAdjacency(documents, tx);
 
       if (null == opts.getTransactionID())
         tx.commit();
 
       return insertKeys;
-    } catch (TransactionException | NodeException e) {
+    } catch (TransactionException | GraphException e) {
       throw new InGraphDBException(e);
     }
   }
 
-  public Map<UUID, EdgeDocument> update() {
-    return new HashMap<>();
+  public Map<UUID, EdgeDocument> update(Map<UUID, EdgeDocument> updateDocuments, UpdateOptions opts)
+    throws InGraphDBException {
+
+    try {
+      TransactionManager txManager = TransactionManager.getInstance();
+      Transaction tx;
+
+      if (null == opts.getTransactionID()) {
+        // implicit transaction
+        tx = txManager.createTransaction();
+        tx.start();
+      } else {
+        // explicit transaction
+        tx = txManager.getTransaction(opts.getTransactionID());
+      }
+
+      if (tx.getStatus() != TxStatus.RUNNING)
+        throw new InGraphDBException("Transaction not running.");
+
+      Map<UUID, EdgeDocument> updates;
+      try {
+        EdgeParticipant participant = getParticipant(tx);
+        updates = participant.update(updateDocuments, opts);
+        updateNodeAdjacency(updateDocuments, updates, tx);
+
+      } catch (EdgeException e) {
+        if (null == opts.getTransactionID())
+          tx.abort();
+
+        throw e;
+      }
+
+      if (null == opts.getTransactionID())
+        tx.commit();
+
+      return updates;
+    } catch (TransactionException | GraphException e) {
+      throw new InGraphDBException(e);
+    }
   }
 
   public void delete() {
@@ -82,16 +116,16 @@ public final class Edge {
     return participant;
   }
 
-  private void updateNodeAdjacency(List<EdgeDocument> documents, Transaction tx)
+  private void addNodeAdjacency(List<EdgeDocument> documents, Transaction tx)
     throws InGraphDBException, NodeException {
 
     // ToDo: optimization to call update once per node participant
 
-    for(EdgeDocument doc : documents) {
+    for (EdgeDocument doc : documents) {
 
-      // ToDo: Think about locking here, since we are now in a get and set procedure
+      // ToDo: Think about locking here, since we are now in a get and set procedure -- should be handled by transaction semantics
       // ToDo: Error handling strategy? what if nodes don't exist?
-      // ToDo: What if nodes are part of current transaction
+      // ToDo: Deadlock scenarios?
       NodeID originNodeID = doc.getOrigin();
       NodeID destNodeID = doc.getDestination();
 
@@ -111,6 +145,61 @@ public final class Edge {
         .getParticipant(tx)
         .update(Map.of(destNodeID.getUUID(), destDoc),
           new UpdateOptions().withTransactionID(tx.getID()));
+    }
+  }
+
+  private void updateNodeAdjacency(Map<UUID, EdgeDocument> partialDocs, Map<UUID, EdgeDocument> updateDocs, Transaction tx)
+    throws InGraphDBException, NodeException {
+
+    for (var partialDoc : partialDocs.entrySet()) {
+      UUID edgeUUID = partialDoc.getKey();
+      EdgeDocument edgeDoc = partialDoc.getValue();
+
+      NodeID originNodeID = edgeDoc.getOrigin() != null
+        ? edgeDoc.getOrigin()                         // take new origin
+        : updateDocs.get(edgeUUID).getOrigin();       // take original origin
+      NodeID destNodeID = edgeDoc.getDestination() != null
+        ? edgeDoc.getDestination()                    // take new destination
+        : updateDocs.get(edgeUUID).getDestination();  // take original destination
+
+      if (edgeDoc.getOrigin() != null) {
+        // We have an update to the origin of the relationship
+        // 1. Delete old related node from destination,
+        // 2. Add new related node to origin
+
+        // delete old
+        NodeID oldOriginNodeID = db.relationship(name)
+          .getDocument(edgeUUID)
+          .getOrigin();
+
+        NodeDocument oldOriginDoc = new NodeDocument()
+          .removeRelationship(name, new NodePtr(updateDocs.get(edgeUUID).getDestination(), Direction.ORIGIN));
+
+        db.node(oldOriginNodeID.getNodeName())
+          .getParticipant(tx)
+          .update(Map.of(oldOriginNodeID.getUUID(), oldOriginDoc),
+            new UpdateOptions().withTransactionID(tx.getID()));
+
+        // Add new
+        NodeDocument originDoc = new NodeDocument()
+          .addRelationship(name, new NodePtr(destNodeID, Direction.ORIGIN));
+
+        db.node(originNodeID.getNodeName())
+          .getParticipant(tx)
+          .update(Map.of(originNodeID.getUUID(), originDoc),
+            new UpdateOptions().withTransactionID(tx.getID()));
+      }
+
+      if (edgeDoc.getDestination() != null) {
+
+        NodeDocument destDoc = new NodeDocument()
+          .addRelationship(name, new NodePtr(originNodeID, Direction.DESTINATION));
+
+        db.node(destNodeID.getNodeName())
+          .getParticipant(tx)
+          .update(Map.of(destNodeID.getUUID(), destDoc),
+            new UpdateOptions().withTransactionID(tx.getID()));
+      }
     }
   }
 }
