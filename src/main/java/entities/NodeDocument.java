@@ -1,5 +1,7 @@
 package entities;
 
+import exceptions.NodeException;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -43,7 +45,7 @@ public class NodeDocument extends Document {
     return this;
   }
 
-  public NodeDocument removeRelationship(String relationshipName, NodePtr relatedNode) {
+  public NodeDocument removeRelationship(String relationshipName, NodePtr relatedNode) throws NodeException {
     synchronized (relatedNodes) {
       synchronized(removeNodes) {
         if (!removeNodes.containsKey(relationshipName)) {
@@ -52,7 +54,10 @@ public class NodeDocument extends Document {
 
         Set<NodePtr> connectedNodeSet = relatedNodes.get(relationshipName);
         if (connectedNodeSet != null) {
-          connectedNodeSet.remove(relatedNode);
+          NodePtr removeNode = connectedNodeSet.stream()
+            .filter(nodePtr -> nodePtr.getNodeID().equals(relatedNode.getNodeID()))
+            .findAny().orElseThrow(() -> new NodeException("Expected related node to exist."));
+          connectedNodeSet.remove(removeNode);
         }
 
         Set<NodePtr> removeNodeSet = removeNodes.get(relationshipName);

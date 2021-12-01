@@ -65,7 +65,10 @@ public final class EdgeParticipant implements Transactionable, EditableEdge {
       internalEdge.update(uuid, edgeDocument);
     }
 
-    // ToDo: Deletes
+    // Deletes
+    for (var deleteKey : deleteDocuments) {
+      internalEdge.delete(deleteKey);
+    }
   }
 
   @Override
@@ -162,6 +165,18 @@ public final class EdgeParticipant implements Transactionable, EditableEdge {
 
   @Override
   public void delete(Set<UUID> deleteKeys) throws EdgeException {
+    for (UUID key : deleteKeys) {
+      try {
+        // ToDo: take lock on rel
+        //internalEdge.takeLock(key, 5L);
+        deleteDocuments.add(key);
+
+
+      } catch (Exception e) {
+        throw new EdgeException("Failed to acquire Lock on " + key);
+      }
+    }
+
     // ToDo: take lock on rel
     //  take lock on nodes
     //  add to deleteDocs

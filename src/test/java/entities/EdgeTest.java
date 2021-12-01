@@ -4,6 +4,7 @@ import database.Database;
 import database.Instance;
 import database.types.DBOptions;
 import database.types.DBType;
+import entities.edit_options.DeleteOptions;
 import entities.edit_options.InsertOptions;
 import entities.edit_options.UpdateOptions;
 import entities.transactions.Transaction;
@@ -15,8 +16,7 @@ import org.junit.jupiter.api.TestInstance;
 
 import java.util.*;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class EdgeTest {
@@ -173,9 +173,9 @@ public class EdgeTest {
   @Test
   void updateSanity() throws InGraphDBException {
     // Setup
-    String personNodeName = "Person";
-    String vehicleNodeName = "Vehicle";
-    String ownsRelName = "OWNS";
+    String personNodeName = "PersonUpd";
+    String vehicleNodeName = "VehicleUpd";
+    String ownsRelName = "OWNS_UPD";
 
     Node personNode = edgeDB.createNode(personNodeName);
     Node vehicleNode = edgeDB.createNode(vehicleNodeName);
@@ -244,12 +244,56 @@ public class EdgeTest {
     assertEquals(mustangUUID, actual2.getDestination().getUUID());
     // verify index free adjacency is updated
     NodeDocument mustang = vehicleNode.getDocument(mustangUUID);
-    Set<NodePtr> relatedNodes = mustang.getAdjacentNodes("OWNS");
+    Set<NodePtr> relatedNodes = mustang.getAdjacentNodes(ownsRelName);
     assertEquals(1, relatedNodes.size());
     assertEquals(mcGeeUUID, relatedNodes.stream().findFirst().get().getNodeID().getUUID());
-
-    // ToDo: Test we can update a relationship pointing to an old node to a new node and the IFA updates.
   }
 
+  @Test
+  void delete() throws InGraphDBException {
+    final String test = "deleteTest";
+
+    // Setup
+    Node testNode = edgeDB.createNode(test);
+
+    List<NodeDocument> documents = new ArrayList<>();
+    documents.add(
+      new NodeDocument()
+        .addAttribute("name", "origin")
+    );
+    documents.add(
+      new NodeDocument()
+        .addAttribute("name", "destination")
+    );
+
+    List<UUID> insertKeys = testNode.insert(documents, new InsertOptions());
+    assertNotNull(insertKeys);
+    assertEquals(2, insertKeys.size());
+
+    UUID originKey = insertKeys.get(0);
+    UUID destKey = insertKeys.get(1);
+
+    String testRel = "deleteTestRel";
+    Edge testEdge = edgeDB.createRelationship(testRel);
+
+    List<EdgeDocument> relDocs = new ArrayList<>();
+    relDocs.add(
+      (EdgeDocument) new EdgeDocument()
+        .setOrigin(new NodeID(test, originKey))
+        .setDestination(new NodeID(test, destKey))
+        .addAttribute("name", "relationship"));
+
+    List<UUID> relInsertKeys = testEdge.insert(relDocs, new InsertOptions());
+    assertEquals(1, relInsertKeys.size());
+
+    // Test Case
+    testEdge.delete(new HashSet<>(relInsertKeys), new DeleteOptions());
+
+    assertNull(edgeDB.relationship(testRel).getDocument(relInsertKeys.get(0)));
+
+    Set<NodePtr> relatedNodes = edgeDB.node(test).getDocument(originKey)
+      .getAdjacentNodes(testRel);
+    assertEquals(0, relatedNodes.size());
+  }
 
 }

@@ -52,10 +52,6 @@ public final class NodeInternal {
     return documents.get(uuid);
   }
 
-  public void addRelationship(String relName, Edge edgeDef) {
-
-  }
-
   public void releaseLock(UUID uuid) {
     if (locks.get(uuid) != null) {
       locks.get(uuid).unlock();

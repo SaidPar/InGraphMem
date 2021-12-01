@@ -2,12 +2,14 @@ package entities;
 
 import database.Database;
 import database.Instance;
+import entities.edit_options.DeleteOptions;
 import entities.edit_options.InsertOptions;
 import entities.edit_options.UpdateOptions;
 import entities.transactions.Transaction;
 import entities.transactions.TransactionManager;
 import entities.transactions.TxStatus;
 import entities.transactions.participants.EdgeParticipant;
+import entities.transactions.participants.NodeParticipant;
 import exceptions.*;
 
 import java.util.*;
@@ -98,7 +100,38 @@ public final class Edge {
     }
   }
 
-  public void delete() {
+  public void delete(Set<UUID> deleteKeys, DeleteOptions opts) throws InGraphDBException {
+    try {
+      TransactionManager txManager = TransactionManager.getInstance();
+      Transaction tx;
+
+      if (null == opts.getTransactionID()) {
+        // implicit transaction
+        tx = txManager.createTransaction();
+        tx.start();
+      } else {
+        // explicit transaction
+        tx = txManager.getTransaction(opts.getTransactionID());
+      }
+
+      if (tx.getStatus() != TxStatus.RUNNING)
+        throw new InGraphDBException("Transaction not running.");
+
+      try {
+        EdgeParticipant participant = getParticipant(tx);
+        participant.delete(deleteKeys);
+      } catch (EdgeException e) {
+        if (null == opts.getTransactionID())
+          tx.abort();
+      }
+
+      deleteNodeAdjacency(deleteKeys, tx);
+
+      if (null == opts.getTransactionID())
+        tx.commit();
+    } catch (TransactionException | NodeException e) {
+      throw new InGraphDBException(e);
+    }
   }
 
   public EdgeDocument getDocument(UUID uuid) {
@@ -200,6 +233,31 @@ public final class Edge {
           .update(Map.of(destNodeID.getUUID(), destDoc),
             new UpdateOptions().withTransactionID(tx.getID()));
       }
+    }
+  }
+
+  private void deleteNodeAdjacency(Set<UUID> deleteEdgeKeys, Transaction tx) throws InGraphDBException, NodeException {
+    for (UUID key : deleteEdgeKeys) {
+      EdgeDocument edgeDoc = internalEdge.getDocument(key);
+
+      NodeID originNodeID = edgeDoc.getOrigin();
+      NodeID destNodeID = edgeDoc.getDestination();
+
+      NodeDocument originDoc = new NodeDocument()
+        .removeRelationship(this.name, new NodePtr(destNodeID, Direction.DESTINATION));
+
+      db.node(originNodeID.getNodeName())
+        .getParticipant(tx)
+        .update(Map.of(originNodeID.getUUID(), originDoc),
+          new UpdateOptions().withTransactionID(tx.getID()));
+
+      NodeDocument destDoc = new NodeDocument()
+        .removeRelationship(this.name, new NodePtr(originNodeID, Direction.ORIGIN));
+
+      db.node(destNodeID.getNodeName())
+        .getParticipant(tx)
+        .update(Map.of(destNodeID.getUUID(), destDoc),
+          new UpdateOptions().withTransactionID(tx.getID()));
     }
   }
 }

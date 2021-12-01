@@ -42,10 +42,14 @@ public class EdgeInternal {
     documents.replace(updateKey, updateDoc);
   }
 
-  public EdgeDocument delete() {
-    // ToDo: delete entry from documents map
-    // ToDo: delete NodePtr from IFA
-    return new EdgeDocument();
+  public EdgeDocument delete(UUID deleteKey) {
+    EdgeDocument edgeDoc;
+    synchronized (documents) {
+      edgeDoc = documents.get(deleteKey);
+      documents.remove(deleteKey);
+    }
+
+    return edgeDoc;
   }
 
   public EdgeDocument getDocument(UUID uuid) {
