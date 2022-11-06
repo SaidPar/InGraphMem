@@ -5,6 +5,7 @@ public enum CmdOp {
   HELP,
   EXIT,
   START_DB,
-  SHUTDOWN_DB
+  SHUTDOWN_DB,
+  QUERY
 
 }

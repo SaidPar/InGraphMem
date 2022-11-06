@@ -39,6 +39,9 @@ public class CmdArgs {
       if (commands[0].equalsIgnoreCase(CmdConsts.SHUTDOWN_DATABASE))
         return new ShutdownCommand(commands);
 
+      if (commands[0].equalsIgnoreCase(CmdConsts.QUERY))
+        return new QueryCommand(commands);
+
       return new HelpCommand();
 
     } catch (Exception e) {
