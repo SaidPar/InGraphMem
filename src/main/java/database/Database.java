@@ -10,7 +10,9 @@ import database.types.DBType;
 import entities.Node;
 import entities.Edge;
 import exceptions.InGraphDBException;
+import query.engine.IQueryEngine;
 import query.engine.ResultSet;
+import query.engine.simple.SimpleQueryEngine;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -99,7 +101,8 @@ public class Database implements AutoCloseable {
   }
 
   public ResultSet query(String openCypher) {
-    return new ResultSet();
+    IQueryEngine queryEngine = new SimpleQueryEngine(this);
+    return queryEngine.query(openCypher);
   }
 
   @Override
