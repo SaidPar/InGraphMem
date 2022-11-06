@@ -93,7 +93,7 @@ class NodeTest {
     assertEquals("test1", testNode1.getDocument(node1Keys.get(0)).getAttribute("test1"));
     assertEquals("test1", testNode2.getDocument(node2Keys.get(0)).getAttribute("test1"));
   }
-
+  
   @Test
   void delete() throws Exception {
     Node testNode = new Node("test");
